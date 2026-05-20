@@ -1,46 +1,52 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import './App.css';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import "./App.css";
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
   type User,
-} from 'firebase/auth';
+} from "firebase/auth";
 import {
   collection,
   doc,
   getDoc,
+  increment,
   limit,
   onSnapshot,
   orderBy,
   query,
+  runTransaction,
   serverTimestamp,
   setDoc,
-} from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { auth, db, storage } from './firebase';
+  updateDoc,
+} from "firebase/firestore";
+import { auth, db } from "./firebase";
 
-type ThemeKey = 'minecraft' | 'pinkRabbit' | 'snowPrincess' | 'spongeSea';
-type LangKey = 'en' | 'th';
-type TabKey = 'learn' | 'score' | 'shop' | 'profile';
-type AuthMode = 'login' | 'register';
+type ThemeKey = "yellowBunny" | "redBlockman" | "blueSponge";
+type LangKey = "en" | "th";
+type TabKey = "learn" | "score" | "shop" | "profile";
+type AuthMode = "login" | "register";
+type CheckState = "idle" | "success" | "error";
 
 interface WordItem {
   id: string;
   text: string;
+  meaning: string;
   lang: LangKey;
 }
 
 interface UserProfile {
+  uid: string;
+  email: string;
   name: string;
   className: string;
   coins: number;
+  totalCorrect: number;
   theme: ThemeKey;
-  avatarUrl: string;
+  avatarEmoji: string;
   completedWords: string[];
   claimedRewardIds: string[];
-  email: string;
 }
 
 interface PublicProfile {
@@ -48,49 +54,57 @@ interface PublicProfile {
   name: string;
   className: string;
   coins: number;
+  totalCorrect: number;
   theme: ThemeKey;
-  avatarUrl: string;
+  avatarEmoji: string;
+}
+
+interface RewardItem {
+  id: string;
+  title: string;
+  cost: number;
+  emoji: string;
 }
 
 const ENGLISH_WORDS: WordItem[] = [
-  { id: 'en-1', text: 'hello', lang: 'en' },
-  { id: 'en-2', text: 'name', lang: 'en' },
-  { id: 'en-3', text: 'my', lang: 'en' },
-  { id: 'en-4', text: 'your', lang: 'en' },
-  { id: 'en-5', text: 'pencil', lang: 'en' },
-  { id: 'en-6', text: 'pen', lang: 'en' },
-  { id: 'en-7', text: 'bag', lang: 'en' },
-  { id: 'en-8', text: 'book', lang: 'en' },
-  { id: 'en-9', text: 'desk', lang: 'en' },
-  { id: 'en-10', text: 'chair', lang: 'en' },
-  { id: 'en-11', text: 'ruler', lang: 'en' },
-  { id: 'en-12', text: 'eraser', lang: 'en' },
-  { id: 'en-13', text: 'map', lang: 'en' },
-  { id: 'en-14', text: 'marker', lang: 'en' },
-  { id: 'en-15', text: 'globe', lang: 'en' },
+  { id: "en-1", text: "hello", meaning: "สวัสดี", lang: "en" },
+  { id: "en-2", text: "name", meaning: "ชื่อ", lang: "en" },
+  { id: "en-3", text: "my", meaning: "ของฉัน", lang: "en" },
+  { id: "en-4", text: "your", meaning: "ของคุณ", lang: "en" },
+  { id: "en-5", text: "pencil", meaning: "ดินสอ", lang: "en" },
+  { id: "en-6", text: "pen", meaning: "ปากกา", lang: "en" },
+  { id: "en-7", text: "bag", meaning: "กระเป๋า", lang: "en" },
+  { id: "en-8", text: "book", meaning: "หนังสือ", lang: "en" },
+  { id: "en-9", text: "desk", meaning: "โต๊ะเรียน", lang: "en" },
+  { id: "en-10", text: "chair", meaning: "เก้าอี้", lang: "en" },
+  { id: "en-11", text: "ruler", meaning: "ไม้บรรทัด", lang: "en" },
+  { id: "en-12", text: "eraser", meaning: "ยางลบ", lang: "en" },
+  { id: "en-13", text: "map", meaning: "แผนที่", lang: "en" },
+  { id: "en-14", text: "marker", meaning: "ปากกาเมจิก", lang: "en" },
+  { id: "en-15", text: "globe", meaning: "ลูกโลก", lang: "en" },
 ];
 
 const THAI_WORDS: WordItem[] = [
-  { id: 'th-1', text: 'กา', lang: 'th' },
-  { id: 'th-2', text: 'กิน', lang: 'th' },
-  { id: 'th-3', text: 'ไก่', lang: 'th' },
-  { id: 'th-4', text: 'เก้า', lang: 'th' },
-  { id: 'th-5', text: 'เก็บ', lang: 'th' },
-  { id: 'th-6', text: 'เก่ง', lang: 'th' },
-  { id: 'th-7', text: 'ขา', lang: 'th' },
-  { id: 'th-8', text: 'ของ', lang: 'th' },
-  { id: 'th-9', text: 'เข่า', lang: 'th' },
-  { id: 'th-10', text: 'ข้าง', lang: 'th' },
-  { id: 'th-11', text: 'เขี่ย', lang: 'th' },
-  { id: 'th-12', text: 'ขวา', lang: 'th' },
-  { id: 'th-13', text: 'คำ', lang: 'th' },
-  { id: 'th-14', text: 'คน', lang: 'th' },
-  { id: 'th-15', text: 'คืน', lang: 'th' },
-  { id: 'th-16', text: 'ครู', lang: 'th' },
-  { id: 'th-17', text: 'คุย', lang: 'th' },
-  { id: 'th-18', text: 'คิด', lang: 'th' },
-  { id: 'th-19', text: 'งา', lang: 'th' },
-  { id: 'th-20', text: 'งวง', lang: 'th' },
+  { id: "th-1", text: "กา", meaning: "กา", lang: "th" },
+  { id: "th-2", text: "กิน", meaning: "กิน", lang: "th" },
+  { id: "th-3", text: "ไก่", meaning: "ไก่", lang: "th" },
+  { id: "th-4", text: "เก้า", meaning: "เก้า", lang: "th" },
+  { id: "th-5", text: "เก็บ", meaning: "เก็บ", lang: "th" },
+  { id: "th-6", text: "เก่ง", meaning: "เก่ง", lang: "th" },
+  { id: "th-7", text: "ขา", meaning: "ขา", lang: "th" },
+  { id: "th-8", text: "ของ", meaning: "ของ", lang: "th" },
+  { id: "th-9", text: "เข่า", meaning: "เข่า", lang: "th" },
+  { id: "th-10", text: "ข้าง", meaning: "ข้าง", lang: "th" },
+  { id: "th-11", text: "เขี่ย", meaning: "เขี่ย", lang: "th" },
+  { id: "th-12", text: "ขวา", meaning: "ขวา", lang: "th" },
+  { id: "th-13", text: "คำ", meaning: "คำ", lang: "th" },
+  { id: "th-14", text: "คน", meaning: "คน", lang: "th" },
+  { id: "th-15", text: "คืน", meaning: "คืน", lang: "th" },
+  { id: "th-16", text: "ครู", meaning: "ครู", lang: "th" },
+  { id: "th-17", text: "คุย", meaning: "คุย", lang: "th" },
+  { id: "th-18", text: "คิด", meaning: "คิด", lang: "th" },
+  { id: "th-19", text: "งา", meaning: "งา", lang: "th" },
+  { id: "th-20", text: "งวง", meaning: "งวง", lang: "th" },
 ];
 
 const THEME_OPTIONS: {
@@ -99,57 +113,60 @@ const THEME_OPTIONS: {
   short: string;
   emoji: string;
   description: string;
+  cssClass: string;
 }[] = [
   {
-    key: 'minecraft',
-    title: 'ธีมสีเขียว Minecraft',
-    short: 'Minecraft',
-    emoji: '🟩',
-    description: 'โทนเขียวแบบบล็อก ๆ สดใส สนุกเหมือนโลกพิกเซล',
+    key: "yellowBunny",
+    title: "กระต่ายเหลือง",
+    short: "Bunny",
+    emoji: "🐰",
+    description: "โทนเหลืองน่ารัก สดใส เหมาะกับเด็กเล็ก",
+    cssClass: "theme-yellow-bunny",
   },
   {
-    key: 'pinkRabbit',
-    title: 'ธีมสีชมพู กระต่าย',
-    short: 'Rabbit',
-    emoji: '🐰',
-    description: 'หวานน่ารัก ฟรุ้งฟริ้ง ดูเหมือนแอพราคาสูง',
+    key: "redBlockman",
+    title: "มนุษย์กล่อง แดง",
+    short: "Block",
+    emoji: "🧱",
+    description: "โลกบล็อกผจญภัย สีแดงส้ม สนุก ตื่นเต้น",
+    cssClass: "theme-red-blockman",
   },
   {
-    key: 'snowPrincess',
-    title: 'ธีมสีฟ้า เจ้าหญิงหิมะ',
-    short: 'Snow Princess',
-    emoji: '❄️',
-    description: 'ฟ้าสดใส หิมะเบา ๆ นุ่มนวล หรูหรา',
-  },
-  {
-    key: 'spongeSea',
-    title: 'ธีมสีเหลือง Sponge Bob',
-    short: 'Sponge Sea',
-    emoji: '⭐',
-    description: 'ทะเลสดใส สีเหลืองสนุกสนาน พร้อมบรรยากาศใต้น้ำ',
+    key: "blueSponge",
+    title: "มนุษย์ฟองน้ำ ฟ้า",
+    short: "Ocean",
+    emoji: "🌊",
+    description: "โลกใต้ทะเลสีฟ้า สดใส มีชีวิตชีวา",
+    cssClass: "theme-blue-sponge",
   },
 ];
 
-const REWARD_ITEMS = [
-  { id: 'reward-100', title: 'โหลด 1 เกมส์', cost: 100, emoji: '🎮' },
-  { id: 'reward-200', title: 'กินสุกี้ BONUS', cost: 200, emoji: '🍲' },
-  { id: 'reward-300', title: 'ได้ของเล่น 1 ชิ้น', cost: 300, emoji: '🧸' },
+const AVATAR_OPTIONS = ["👦", "👧", "🧒", "🐰", "🦊", "🐼", "🐥", "⭐", "🚀", "🧸"];
+
+const REWARD_ITEMS: RewardItem[] = [
+  { id: "reward-100", title: "โหลด 1 เกมส์", cost: 100, emoji: "🎮" },
+  { id: "reward-200", title: "กินสุกี้ BONUS", cost: 200, emoji: "🍲" },
+  { id: "reward-300", title: "ได้ของเล่น 1 ชิ้น", cost: 300, emoji: "🧸" },
 ];
 
-const DEFAULT_PROFILE: UserProfile = {
-  name: '',
-  className: '',
-  coins: 0,
-  theme: 'snowPrincess',
-  avatarUrl: '',
-  completedWords: [],
-  claimedRewardIds: [],
-  email: '',
-};
+const DEFAULT_THEME: ThemeKey = "yellowBunny";
+
+function normalizeTheme(value: unknown): ThemeKey {
+  if (value === "yellowBunny" || value === "redBlockman" || value === "blueSponge") {
+    return value;
+  }
+
+  if (value === "pinkRabbit") return "yellowBunny";
+  if (value === "minecraft") return "redBlockman";
+  if (value === "spongeSea") return "blueSponge";
+  if (value === "snowPrincess") return "blueSponge";
+
+  return DEFAULT_THEME;
+}
 
 function normalizeWord(word: string, lang: LangKey) {
-  const clean = word.replace(/\s+/g, '');
-  return lang === 'en' ? clean.toLowerCase() : clean;
+  const clean = word.replace(/\s+/g, "");
+  return lang === "en" ? clean.toLowerCase() : clean;
 }
 
 function splitChars(word: string) {
@@ -158,22 +175,25 @@ function splitChars(word: string) {
 
 function shuffleArray<T>(items: T[]) {
   const arr = [...items];
+
   for (let i = arr.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
+
   return arr;
 }
 
 function buildLetterBank(word: string, lang: LangKey) {
   const answerChars = splitChars(normalizeWord(word, lang));
-  const enExtras = splitChars('abcdefghijklmnopqrstuvwxyz');
-  const thExtras = splitChars('กขฃคฆงจฉชซญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรลวศษสหฬอฮะาำิีึืุูเแโใไ่้๊๋์');
-  const extrasSource = lang === 'en' ? enExtras : thExtras;
-
+  const enExtras = splitChars("abcdefghijklmnopqrstuvwxyz");
+  const thExtras = splitChars("กขคงจฉชซดตถทธนบปผพฟมยรลวสหอาเแโใไ่้");
+  const extrasSource = lang === "en" ? enExtras : thExtras;
   const extras: string[] = [];
+
   while (extras.length < Math.min(5, Math.max(3, answerChars.length))) {
     const randomChar = extrasSource[Math.floor(Math.random() * extrasSource.length)];
+
     if (!answerChars.includes(randomChar) && !extras.includes(randomChar)) {
       extras.push(randomChar);
     }
@@ -186,32 +206,63 @@ function getWordKey(item: WordItem) {
   return `${item.lang}:${item.id}:${normalizeWord(item.text, item.lang)}`;
 }
 
+function createDefaultProfile(currentUser: User): UserProfile {
+  const email = currentUser.email || "";
+  const name = email ? email.split("@")[0] : "เด็กน้อย";
+
+  return {
+    uid: currentUser.uid,
+    email,
+    name,
+    className: "ป.1/1",
+    coins: 0,
+    totalCorrect: 0,
+    theme: DEFAULT_THEME,
+    avatarEmoji: "🧒",
+    completedWords: [],
+    claimedRewardIds: [],
+  };
+}
+
+function mergeProfile(rawData: Partial<UserProfile>, currentUser: User): UserProfile {
+  const fallback = createDefaultProfile(currentUser);
+
+  return {
+    uid: currentUser.uid,
+    email: rawData.email || fallback.email,
+    name: rawData.name || fallback.name,
+    className: rawData.className || fallback.className,
+    coins: Number(rawData.coins || 0),
+    totalCorrect: Number(rawData.totalCorrect || 0),
+    theme: normalizeTheme(rawData.theme),
+    avatarEmoji: rawData.avatarEmoji || "🧒",
+    completedWords: Array.isArray(rawData.completedWords) ? rawData.completedWords : [],
+    claimedRewardIds: Array.isArray(rawData.claimedRewardIds) ? rawData.claimedRewardIds : [],
+  };
+}
+
 function App() {
-  const [authMode, setAuthMode] = useState<AuthMode>('login');
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [authLoading, setAuthLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
-
-  const [registerName, setRegisterName] = useState('');
-  const [registerClassName, setRegisterClassName] = useState('');
-  const [email, setEmail] = useState('pond01@wordstar.local');
-  const [password, setPassword] = useState('123456');
-  const [authError, setAuthError] = useState('');
-
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
-  const [activeTab, setActiveTab] = useState<TabKey>('learn');
-  const [language, setLanguage] = useState<LangKey>('en');
+  const [registerName, setRegisterName] = useState("");
+  const [registerClassName, setRegisterClassName] = useState("ป.1/1");
+  const [email, setEmail] = useState("pond01@wordstar.local");
+  const [password, setPassword] = useState("123456");
+  const [authError, setAuthError] = useState("");
+
+  const [activeTab, setActiveTab] = useState<TabKey>("learn");
+  const [language, setLanguage] = useState<LangKey>("en");
   const [wordIndex, setWordIndex] = useState(0);
-
   const [letterBank, setLetterBank] = useState<string[]>([]);
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
-  const [feedback, setFeedback] = useState('');
-  const [checkState, setCheckState] = useState<'idle' | 'success' | 'error'>('idle');
+  const [feedback, setFeedback] = useState("เรียงตัวอักษรและเขียนคำศัพท์ แล้วกดตรวจคำตอบ");
+  const [checkState, setCheckState] = useState<CheckState>("idle");
   const [showAnswer, setShowAnswer] = useState(false);
-
   const [leaderboard, setLeaderboard] = useState<PublicProfile[]>([]);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -219,17 +270,20 @@ function App() {
   const isDrawingRef = useRef(false);
   const hasDrawnRef = useRef(false);
 
-  const currentWords = language === 'en' ? ENGLISH_WORDS : THAI_WORDS;
+  const currentWords = language === "en" ? ENGLISH_WORDS : THAI_WORDS;
+  const currentWord = currentWords[wordIndex] || currentWords[0];
 
-  const currentWord = useMemo(() => {
-    if (wordIndex > currentWords.length - 1) {
-      return currentWords[0];
-    }
-    return currentWords[wordIndex];
-  }, [currentWords, wordIndex]);
+  const expectedChars = useMemo(() => {
+    return splitChars(normalizeWord(currentWord.text, currentWord.lang));
+  }, [currentWord]);
 
-  const selectedText = selectedIndices.map((index) => letterBank[index]).join('');
-  const normalizedSelectedText = language === 'en' ? selectedText.toLowerCase() : selectedText;
+  const selectedText = selectedIndices.map((index) => letterBank[index]).join("");
+  const normalizedSelectedText = language === "en" ? selectedText.toLowerCase() : selectedText;
+
+  const currentTheme = useMemo(() => {
+    const key = profile ? normalizeTheme(profile.theme) : DEFAULT_THEME;
+    return THEME_OPTIONS.find((item) => item.key === key) || THEME_OPTIONS[0];
+  }, [profile]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -242,42 +296,28 @@ function App() {
       }
 
       setProfileLoading(true);
+
       try {
-        const userRef = doc(db, 'users', firebaseUser.uid);
+        const userRef = doc(db, "users", firebaseUser.uid);
         const snap = await getDoc(userRef);
 
         if (snap.exists()) {
-          const data = snap.data() as Partial<UserProfile>;
-          const nextProfile: UserProfile = {
-            ...DEFAULT_PROFILE,
-            ...data,
-            email: data.email || firebaseUser.email || '',
-          };
-          setProfile(nextProfile);
+          const profileData = mergeProfile(snap.data() as Partial<UserProfile>, firebaseUser);
+          setProfile(profileData);
+
+          await setDoc(userRef, profileData, { merge: true });
+          await upsertPublicProfile(profileData);
         } else {
-          const nextProfile: UserProfile = {
-            ...DEFAULT_PROFILE,
-            name: firebaseUser.email?.split('@')[0] || 'เด็กน้อย',
-            email: firebaseUser.email || '',
-          };
+          const newProfile = createDefaultProfile(firebaseUser);
+
           await setDoc(userRef, {
-            ...nextProfile,
+            ...newProfile,
+            createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           });
-          await setDoc(
-            doc(db, 'publicProfiles', firebaseUser.uid),
-            {
-              uid: firebaseUser.uid,
-              name: nextProfile.name,
-              className: nextProfile.className,
-              coins: nextProfile.coins,
-              theme: nextProfile.theme,
-              avatarUrl: nextProfile.avatarUrl,
-              updatedAt: serverTimestamp(),
-            },
-            { merge: true }
-          );
-          setProfile(nextProfile);
+
+          await upsertPublicProfile(newProfile);
+          setProfile(newProfile);
         }
       } catch (error) {
         console.error(error);
@@ -290,19 +330,23 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const q = query(collection(db, 'publicProfiles'), orderBy('coins', 'desc'), limit(50));
+    const q = query(collection(db, "publicProfiles"), orderBy("coins", "desc"), limit(50));
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const items: PublicProfile[] = snapshot.docs.map((item) => {
-        const data = item.data() as Omit<PublicProfile, 'uid'>;
+        const data = item.data() as Partial<PublicProfile>;
+
         return {
           uid: item.id,
-          name: data.name || 'เด็กน้อย',
-          className: data.className || '',
-          coins: data.coins || 0,
-          theme: data.theme || 'snowPrincess',
-          avatarUrl: data.avatarUrl || '',
+          name: data.name || "เด็กน้อย",
+          className: data.className || "",
+          coins: Number(data.coins || 0),
+          totalCorrect: Number(data.totalCorrect || 0),
+          theme: normalizeTheme(data.theme),
+          avatarEmoji: data.avatarEmoji || "🧒",
         };
       });
+
       setLeaderboard(items);
     });
 
@@ -310,47 +354,47 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (wordIndex > currentWords.length - 1) {
-      setWordIndex(0);
-    }
-  }, [currentWords, wordIndex]);
-
-  useEffect(() => {
     if (!currentWord) return;
+
     setLetterBank(buildLetterBank(currentWord.text, currentWord.lang));
     setSelectedIndices([]);
-    setFeedback('');
-    setCheckState('idle');
+    setFeedback("ฟังเสียง → เรียงตัวอักษร → เขียนคำศัพท์ → กดตรวจคำตอบ");
+    setCheckState("idle");
     setShowAnswer(false);
     clearCanvas();
-    setTimeout(() => {
+
+    const timer = window.setTimeout(() => {
       speakWord(currentWord.text, currentWord.lang);
-    }, 300);
+    }, 350);
+
+    return () => window.clearTimeout(timer);
   }, [currentWord]);
 
   useEffect(() => {
+    setupCanvas();
+
     const onResize = () => {
       setupCanvas();
     };
 
-    window.addEventListener('resize', onResize);
-    setTimeout(() => setupCanvas(), 100);
+    window.addEventListener("resize", onResize);
 
     return () => {
-      window.removeEventListener('resize', onResize);
+      window.removeEventListener("resize", onResize);
     };
   }, [activeTab]);
 
-  async function upsertPublicProfile(nextProfile: UserProfile, currentUser: User) {
+  async function upsertPublicProfile(nextProfile: UserProfile) {
     await setDoc(
-      doc(db, 'publicProfiles', currentUser.uid),
+      doc(db, "publicProfiles", nextProfile.uid),
       {
-        uid: currentUser.uid,
+        uid: nextProfile.uid,
         name: nextProfile.name,
         className: nextProfile.className,
         coins: nextProfile.coins,
-        theme: nextProfile.theme,
-        avatarUrl: nextProfile.avatarUrl,
+        totalCorrect: nextProfile.totalCorrect,
+        theme: normalizeTheme(nextProfile.theme),
+        avatarEmoji: nextProfile.avatarEmoji || "🧒",
         updatedAt: serverTimestamp(),
       },
       { merge: true }
@@ -363,77 +407,78 @@ function App() {
     const nextProfile: UserProfile = {
       ...profile,
       ...patch,
+      theme: patch.theme ? normalizeTheme(patch.theme) : normalizeTheme(profile.theme),
     };
 
     setProfile(nextProfile);
 
     await setDoc(
-      doc(db, 'users', user.uid),
+      doc(db, "users", user.uid),
       {
         ...patch,
+        theme: nextProfile.theme,
         updatedAt: serverTimestamp(),
       },
       { merge: true }
     );
 
-    await upsertPublicProfile(nextProfile, user);
+    await upsertPublicProfile(nextProfile);
   }
 
   async function handleAuthSubmit() {
     try {
-      setAuthError('');
+      setAuthError("");
 
-      if (authMode === 'login') {
+      if (authMode === "login") {
         await signInWithEmailAndPassword(auth, email.trim(), password);
-      } else {
-        const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
-
-        const newProfile: UserProfile = {
-          ...DEFAULT_PROFILE,
-          name: registerName.trim() || 'เด็กน้อย',
-          className: registerClassName.trim(),
-          email: email.trim(),
-        };
-
-        await setDoc(doc(db, 'users', cred.user.uid), {
-          ...newProfile,
-          updatedAt: serverTimestamp(),
-        });
-
-        await setDoc(
-          doc(db, 'publicProfiles', cred.user.uid),
-          {
-            uid: cred.user.uid,
-            name: newProfile.name,
-            className: newProfile.className,
-            coins: newProfile.coins,
-            theme: newProfile.theme,
-            avatarUrl: newProfile.avatarUrl,
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
-
-        setProfile(newProfile);
+        return;
       }
-    } catch (error: any) {
-      setAuthError(error?.message || 'เข้าสู่ระบบไม่สำเร็จ');
+
+      const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      const newProfile: UserProfile = {
+        uid: credential.user.uid,
+        email: email.trim(),
+        name: registerName.trim() || email.split("@")[0] || "เด็กน้อย",
+        className: registerClassName.trim() || "ป.1/1",
+        coins: 0,
+        totalCorrect: 0,
+        theme: DEFAULT_THEME,
+        avatarEmoji: "🧒",
+        completedWords: [],
+        claimedRewardIds: [],
+      };
+
+      await setDoc(doc(db, "users", credential.user.uid), {
+        ...newProfile,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      await upsertPublicProfile(newProfile);
+      setProfile(newProfile);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "เข้าสู่ระบบไม่สำเร็จ";
+      setAuthError(message);
     }
   }
 
   function speakWord(text: string, lang: LangKey) {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    if (!window.speechSynthesis) return;
+
     window.speechSynthesis.cancel();
+
     const speech = new SpeechSynthesisUtterance(text);
-    speech.lang = lang === 'en' ? 'en-US' : 'th-TH';
-    speech.rate = lang === 'en' ? 0.85 : 0.9;
+    speech.lang = lang === "en" ? "en-US" : "th-TH";
+    speech.rate = lang === "en" ? 0.82 : 0.9;
     speech.pitch = 1;
+
     window.speechSynthesis.speak(speech);
   }
 
   function setupCanvas() {
     const canvas = canvasRef.current;
     const wrap = canvasWrapRef.current;
+
     if (!canvas || !wrap) return;
 
     const rect = wrap.getBoundingClientRect();
@@ -444,23 +489,32 @@ function App() {
     canvas.style.width = `${rect.width}px`;
     canvas.style.height = `${rect.height}px`;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
+
     if (!ctx) return;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(ratio, ratio);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#111827';
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#111827";
     ctx.lineWidth = 6;
   }
 
   function clearCanvas() {
     const canvas = canvasRef.current;
-    if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!canvas) {
+      hasDrawnRef.current = false;
+      return;
+    }
+
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+      hasDrawnRef.current = false;
+      return;
+    }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     hasDrawnRef.current = false;
@@ -468,7 +522,9 @@ function App() {
 
   function getPointerPosition(event: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;
+
     if (!canvas) return { x: 0, y: 0 };
+
     const rect = canvas.getBoundingClientRect();
 
     return {
@@ -479,14 +535,15 @@ function App() {
 
   function handlePointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const ctx = canvas?.getContext("2d");
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!canvas || !ctx) return;
 
     const { x, y } = getPointerPosition(event);
+
     ctx.beginPath();
     ctx.moveTo(x, y);
+
     isDrawingRef.current = true;
     hasDrawnRef.current = true;
 
@@ -501,23 +558,23 @@ function App() {
     if (!isDrawingRef.current) return;
 
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const ctx = canvas?.getContext("2d");
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!canvas || !ctx) return;
 
     const { x, y } = getPointerPosition(event);
+
     ctx.lineTo(x, y);
     ctx.stroke();
   }
 
   function handlePointerUp(event: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;
-    if (!canvas) return;
 
     isDrawingRef.current = false;
+
     try {
-      canvas.releasePointerCapture(event.pointerId);
+      canvas?.releasePointerCapture(event.pointerId);
     } catch {
       // ignore
     }
@@ -525,15 +582,22 @@ function App() {
 
   function handlePickLetter(index: number) {
     if (selectedIndices.includes(index)) return;
+    if (selectedIndices.length >= expectedChars.length) return;
+
     setSelectedIndices((prev) => [...prev, index]);
+    setCheckState("idle");
+    setFeedback("ดีมาก เรียงต่อให้ครบ แล้วเขียนคำศัพท์ลงกระดาน");
   }
 
   function handleRemoveLastLetter() {
     setSelectedIndices((prev) => prev.slice(0, -1));
+    setCheckState("idle");
   }
 
   function handleResetLetters() {
     setSelectedIndices([]);
+    setCheckState("idle");
+    setFeedback("ล้างคำแล้ว ลองเรียงใหม่อีกครั้ง");
   }
 
   async function handleCheckAnswer() {
@@ -543,38 +607,55 @@ function App() {
     const wordKey = getWordKey(currentWord);
 
     if (!hasDrawnRef.current) {
-      setCheckState('error');
-      setFeedback('ต้องลองเขียนคำนี้ในช่องก่อน แล้วค่อยตรวจคำตอบ');
+      setCheckState("error");
+      setFeedback("ต้องลองเขียนคำนี้ในช่องก่อน แล้วค่อยตรวจคำตอบ");
       return;
     }
 
     if (normalizedSelectedText !== expected) {
-      setCheckState('error');
-      setFeedback('เรียงตัวอักษรยังไม่ถูก ลองใหม่อีกครั้งนะ');
+      setCheckState("error");
+      setFeedback("เรียงตัวอักษรยังไม่ถูก ลองฟังเสียงซ้ำ แล้วเรียงใหม่อีกครั้ง");
       return;
     }
 
     if (profile.completedWords.includes(wordKey)) {
-      setCheckState('success');
-      setFeedback('เก่งมาก! คำนี้เคยได้คะแนนแล้ว แต่ยังฝึกซ้ำได้');
+      setCheckState("success");
+      setFeedback("เก่งมาก! คำนี้เคยได้คะแนนแล้ว แต่ยังฝึกซ้ำได้");
       return;
     }
 
     const nextCompletedWords = [...profile.completedWords, wordKey];
     const nextCoins = profile.coins + 1;
+    const nextTotalCorrect = profile.totalCorrect + 1;
 
-    await saveProfilePatch({
-      coins: nextCoins,
+    await updateDoc(doc(db, "users", user.uid), {
+      coins: increment(1),
+      totalCorrect: increment(1),
       completedWords: nextCompletedWords,
+      updatedAt: serverTimestamp(),
     });
 
-    setCheckState('success');
-    setFeedback('ถูกต้อง! ได้ 1 คะแนน 🎉');
+    const nextProfile = {
+      ...profile,
+      coins: nextCoins,
+      totalCorrect: nextTotalCorrect,
+      completedWords: nextCompletedWords,
+    };
+
+    setProfile(nextProfile);
+    await upsertPublicProfile(nextProfile);
+
+    setCheckState("success");
+    setFeedback("ถูกต้อง! ได้ 1 คะแนน 🎉");
+
+    window.setTimeout(() => {
+      handleNextWord();
+    }, 1100);
   }
 
   async function handleThemeChange(theme: ThemeKey) {
-    if (!profile) return;
     setSavingProfile(true);
+
     try {
       await saveProfilePatch({ theme });
     } finally {
@@ -582,54 +663,36 @@ function App() {
     }
   }
 
+  async function handleAvatarChange(avatarEmoji: string) {
+    await saveProfilePatch({ avatarEmoji });
+  }
+
   async function handleProfileSave() {
     if (!profile) return;
+
     setSavingProfile(true);
+
     try {
       await saveProfilePatch({
         name: profile.name,
         className: profile.className,
       });
-      alert('บันทึกโปรไฟล์เรียบร้อยแล้ว');
+
+      alert("บันทึกโปรไฟล์เรียบร้อยแล้ว");
     } finally {
       setSavingProfile(false);
     }
   }
 
-  async function handleAvatarUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    if (!user || !profile) return;
-
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setUploadingAvatar(true);
-
-    try {
-      const fileRef = ref(storage, `avatars/${user.uid}/${Date.now()}-${file.name}`);
-      await uploadBytes(fileRef, file);
-      const url = await getDownloadURL(fileRef);
-
-      await saveProfilePatch({
-        avatarUrl: url,
-      });
-
-      alert('อัปโหลดรูปโปรไฟล์เรียบร้อยแล้ว');
-    } catch (error) {
-      console.error(error);
-      alert('อัปโหลดรูปไม่สำเร็จ');
-    } finally {
-      setUploadingAvatar(false);
-    }
-  }
-
   async function handleClaimReward(rewardId: string) {
-    if (!profile) return;
+    if (!profile || !user) return;
 
     const reward = REWARD_ITEMS.find((item) => item.id === rewardId);
+
     if (!reward) return;
 
     if (profile.claimedRewardIds.includes(rewardId)) {
-      alert('รับรางวัลนี้ไปแล้ว');
+      alert("รับรางวัลนี้ไปแล้ว");
       return;
     }
 
@@ -638,9 +701,45 @@ function App() {
       return;
     }
 
-    const nextRewardIds = [...profile.claimedRewardIds, rewardId];
-    await saveProfilePatch({ claimedRewardIds: nextRewardIds });
-    alert(`รับรางวัล "${reward.title}" เรียบร้อยแล้ว`);
+    const userRef = doc(db, "users", user.uid);
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const snap = await transaction.get(userRef);
+
+        if (!snap.exists()) {
+          throw new Error("ไม่พบข้อมูลผู้ใช้");
+        }
+
+        const data = snap.data() as Partial<UserProfile>;
+        const currentCoins = Number(data.coins || 0);
+        const currentRewardIds = Array.isArray(data.claimedRewardIds) ? data.claimedRewardIds : [];
+
+        if (currentCoins < reward.cost) {
+          throw new Error("คะแนนไม่พอ");
+        }
+
+        transaction.update(userRef, {
+          coins: currentCoins - reward.cost,
+          claimedRewardIds: [...currentRewardIds, rewardId],
+          updatedAt: serverTimestamp(),
+        });
+      });
+
+      const nextProfile = {
+        ...profile,
+        coins: profile.coins - reward.cost,
+        claimedRewardIds: [...profile.claimedRewardIds, rewardId],
+      };
+
+      setProfile(nextProfile);
+      await upsertPublicProfile(nextProfile);
+
+      alert(`รับรางวัล "${reward.title}" เรียบร้อยแล้ว`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "แลกรางวัลไม่สำเร็จ";
+      alert(message);
+    }
   }
 
   function handleNextWord() {
@@ -653,30 +752,18 @@ function App() {
 
   async function handleLogout() {
     await signOut(auth);
-    setActiveTab('learn');
+    setActiveTab("learn");
     setProfile(null);
   }
 
   function getRank() {
-    if (!user) return '-';
-    const index = leaderboard.findIndex((item) => item.uid === user.uid);
-    if (index === -1) return '-';
-    return `#${index + 1}`;
-  }
+    if (!user) return "-";
 
-  function getThemeClass(theme: ThemeKey) {
-    switch (theme) {
-      case 'minecraft':
-        return 'theme-minecraft';
-      case 'pinkRabbit':
-        return 'theme-rabbit';
-      case 'snowPrincess':
-        return 'theme-snow';
-      case 'spongeSea':
-        return 'theme-sponge';
-      default:
-        return 'theme-snow';
-    }
+    const index = leaderboard.findIndex((item) => item.uid === user.uid);
+
+    if (index === -1) return "-";
+
+    return `#${index + 1}`;
   }
 
   if (authLoading || profileLoading) {
@@ -699,20 +786,23 @@ function App() {
 
           <div className="authSwitch">
             <button
-              className={authMode === 'login' ? 'authSwitchBtn active' : 'authSwitchBtn'}
-              onClick={() => setAuthMode('login')}
+              className={authMode === "login" ? "authSwitchBtn active" : "authSwitchBtn"}
+              onClick={() => setAuthMode("login")}
+              type="button"
             >
               Login
             </button>
+
             <button
-              className={authMode === 'register' ? 'authSwitchBtn active' : 'authSwitchBtn'}
-              onClick={() => setAuthMode('register')}
+              className={authMode === "register" ? "authSwitchBtn active" : "authSwitchBtn"}
+              onClick={() => setAuthMode("register")}
+              type="button"
             >
               Register
             </button>
           </div>
 
-          {authMode === 'register' && (
+          {authMode === "register" && (
             <>
               <label>ชื่อเด็ก</label>
               <input
@@ -738,16 +828,12 @@ function App() {
           />
 
           <label>Password</label>
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            type="password"
-          />
+          <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" />
 
           {authError && <div className="authError">{authError}</div>}
 
-          <button className="authSubmit" onClick={handleAuthSubmit}>
-            {authMode === 'login' ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'}
+          <button className="authSubmit" onClick={handleAuthSubmit} type="button">
+            {authMode === "login" ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}
           </button>
 
           <div className="authHint">
@@ -758,13 +844,9 @@ function App() {
     );
   }
 
-  const themeClass = getThemeClass(profile.theme);
-
   return (
-    <div className={`appShell ${themeClass}`}>
-      <div className="backgroundDecor decorOne" />
-      <div className="backgroundDecor decorTwo" />
-      <div className="backgroundDecor decorThree" />
+    <div className={`appShell ${currentTheme.cssClass}`}>
+      <div className="appOverlay" />
 
       <div className="appContainer">
         <header className="topBar glassCard">
@@ -776,66 +858,62 @@ function App() {
           <div className="topBarRight">
             <div className="coinBadge">🪙 {profile.coins}</div>
             <div className="rankBadge">🏆 {getRank()}</div>
-            <div className="avatarBadge">
-              {profile.avatarUrl ? (
-                <img src={profile.avatarUrl} alt="avatar" />
-              ) : (
-                <span>🧒</span>
-              )}
-            </div>
+            <div className="avatarBadge">{profile.avatarEmoji || "🧒"}</div>
           </div>
         </header>
 
         <main className="mainContent">
-          {activeTab === 'learn' && (
+          {activeTab === "learn" && (
             <section className="screenCard lessonScreen">
               <div className="sectionTitle">ฝึกเขียนคำศัพท์</div>
 
               <div className="languageTabs">
                 <button
-                  className={language === 'en' ? 'langBtn active' : 'langBtn'}
+                  className={language === "en" ? "langBtn active" : "langBtn"}
                   onClick={() => {
-                    setLanguage('en');
+                    setLanguage("en");
                     setWordIndex(0);
                   }}
+                  type="button"
                 >
                   GB ภาษาอังกฤษ
                 </button>
+
                 <button
-                  className={language === 'th' ? 'langBtn active' : 'langBtn'}
+                  className={language === "th" ? "langBtn active" : "langBtn"}
                   onClick={() => {
-                    setLanguage('th');
+                    setLanguage("th");
                     setWordIndex(0);
                   }}
+                  type="button"
                 >
                   TH ภาษาไทย
                 </button>
+
                 <button
-                  className={showAnswer ? 'langBtn answer active' : 'langBtn answer'}
+                  className={showAnswer ? "langBtn answer active" : "langBtn answer"}
                   onClick={() => setShowAnswer((prev) => !prev)}
+                  type="button"
                 >
-                  {showAnswer ? 'ซ่อนเฉลย' : 'ดูคำเฉลย'}
+                  {showAnswer ? "ซ่อนเฉลย" : "ดูคำเฉลย"}
                 </button>
               </div>
 
               <div className="heroPrompt glassCard">
-                <div className="heroPromptIcon">
-                  {profile.theme === 'minecraft' && '🟩'}
-                  {profile.theme === 'pinkRabbit' && '🐰'}
-                  {profile.theme === 'snowPrincess' && '❄️'}
-                  {profile.theme === 'spongeSea' && '🌊'}
-                </div>
+                <div className="heroPromptIcon">{currentTheme.emoji}</div>
 
                 <div className="heroPromptCenter">
-                  <div className="bigQuestion">{showAnswer ? currentWord.text : '?'}</div>
+                  <div className="bigQuestion">{showAnswer ? currentWord.text : "?"}</div>
                   <div className="heroPromptText">
                     ฟังเสียง → เรียงตัวอักษร → เขียนคำนี้ลงในช่อง
                   </div>
+                  <div className="wordMeaning">{showAnswer ? currentWord.meaning : ""}</div>
                 </div>
 
                 <button
                   className="speakButton"
                   onClick={() => speakWord(currentWord.text, currentWord.lang)}
+                  type="button"
                 >
                   🔊 ฟังเสียง
                 </button>
@@ -844,14 +922,12 @@ function App() {
               <div className="lessonGrid">
                 <div className="leftColumn">
                   <div className="practiceCard glassCard">
-                    <div className="cardTitle">เรียงตัวอักษรให้ถูกต้อง</div>
+                    <div className="cardTitle">1) เรียงตัวอักษรให้ถูกต้อง</div>
 
                     <div className="answerSlots">
-                      {splitChars(normalizeWord(currentWord.text, currentWord.lang)).map((_, slotIndex) => (
+                      {expectedChars.map((_, slotIndex) => (
                         <div className="answerSlot" key={`slot-${slotIndex}`}>
-                          {selectedIndices[slotIndex] !== undefined
-                            ? letterBank[selectedIndices[slotIndex]]
-                            : ''}
+                          {selectedIndices[slotIndex] !== undefined ? letterBank[selectedIndices[slotIndex]] : ""}
                         </div>
                       ))}
                     </div>
@@ -859,12 +935,14 @@ function App() {
                     <div className="letterTray">
                       {letterBank.map((char, index) => {
                         const used = selectedIndices.includes(index);
+
                         return (
                           <button
                             key={`${char}-${index}`}
-                            className={used ? 'letterButton used' : 'letterButton'}
+                            className={used ? "letterButton used" : "letterButton"}
                             onClick={() => handlePickLetter(index)}
                             disabled={used}
+                            type="button"
                           >
                             {char}
                           </button>
@@ -873,20 +951,22 @@ function App() {
                     </div>
 
                     <div className="miniControls">
-                      <button className="miniBtn" onClick={handleRemoveLastLetter}>
+                      <button className="miniBtn" onClick={handleRemoveLastLetter} type="button">
                         ↩ ลบตัวท้าย
                       </button>
-                      <button className="miniBtn" onClick={handleResetLetters}>
+
+                      <button className="miniBtn" onClick={handleResetLetters} type="button">
                         🧽 ล้างคำ
                       </button>
                     </div>
                   </div>
 
                   <div className="practiceCard glassCard">
-                    <div className="cardTitle">เขียนคำศัพท์ตรงนี้</div>
+                    <div className="cardTitle">2) เขียนคำศัพท์ตรงนี้</div>
 
                     <div className="writingPad" ref={canvasWrapRef}>
                       <div className="writingLines" />
+
                       <canvas
                         ref={canvasRef}
                         className="writingCanvas"
@@ -895,19 +975,22 @@ function App() {
                         onPointerUp={handlePointerUp}
                         onPointerLeave={handlePointerUp}
                       />
-                      <button className="clearCanvasBtn" onClick={clearCanvas}>
+
+                      <button className="clearCanvasBtn" onClick={clearCanvas} type="button">
                         ✏️ ล้างเส้น
                       </button>
                     </div>
 
                     <div className="actionRow">
-                      <button className="navBtn" onClick={handlePrevWord}>
+                      <button className="navBtn" onClick={handlePrevWord} type="button">
                         ← คำก่อนหน้า
                       </button>
-                      <button className="checkBtn" onClick={handleCheckAnswer}>
+
+                      <button className="checkBtn" onClick={handleCheckAnswer} type="button">
                         ✅ ตรวจคำตอบ
                       </button>
-                      <button className="navBtn" onClick={handleNextWord}>
+
+                      <button className="navBtn" onClick={handleNextWord} type="button">
                         คำถัดไป →
                       </button>
                     </div>
@@ -915,30 +998,43 @@ function App() {
                 </div>
 
                 <div className="rightColumn">
-                  <div className={checkState === 'success' ? 'resultCard success' : 'resultCard'}>
-                    <div className="resultEmoji">⭐</div>
-                    <div className="resultTitle">ผลการตรวจ</div>
-                    <div className="resultText">
-                      {feedback || 'กดตรวจคำตอบเมื่อเรียงคำและเขียนเสร็จแล้ว'}
+                  <div
+                    className={
+                      checkState === "success"
+                        ? "resultCard success"
+                        : checkState === "error"
+                          ? "resultCard error"
+                          : "resultCard"
+                    }
+                  >
+                    <div className="resultEmoji">
+                      {checkState === "success" ? "⭐" : checkState === "error" ? "🙂" : "✨"}
                     </div>
+
+                    <div className="resultTitle">
+                      {checkState === "success" ? "ยอดเยี่ยม!" : checkState === "error" ? "ลองอีกครั้ง" : "พร้อมตรวจ"}
+                    </div>
+
+                    <div className="resultText">{feedback}</div>
                   </div>
 
                   <div className="infoCard glassCard">
                     <div className="cardTitle">สถานะปัจจุบัน</div>
-                    <div className="infoLine">ภาษา: {language === 'en' ? 'อังกฤษ' : 'ไทย'}</div>
+                    <div className="infoLine">ภาษา: {language === "en" ? "อังกฤษ" : "ไทย"}</div>
                     <div className="infoLine">
                       คำที่: {wordIndex + 1} / {currentWords.length}
                     </div>
                     <div className="infoLine">คะแนนของฉัน: {profile.coins} คะแนน</div>
+                    <div className="infoLine">ธีม: {currentTheme.title}</div>
                   </div>
 
                   <div className="infoCard glassCard">
                     <div className="cardTitle">วิธีเล่น</div>
                     <ul className="tipsList">
-                      <li>กดฟังเสียงอัตโนมัติเมื่อเปลี่ยนคำ</li>
-                      <li>ลากสายตาดูถาดตัวอักษร แล้วกดเรียงให้ถูก</li>
-                      <li>เขียนคำลงในช่องด้วยนิ้ว / เมาส์ / ปากกา</li>
-                      <li>ถ้าเรียงคำถูกและมีการเขียน จะได้ 1 คะแนน</li>
+                      <li>ระบบอ่านเสียงอัตโนมัติเมื่อเปลี่ยนคำ</li>
+                      <li>กดตัวอักษรจากถาดให้เรียงเป็นคำที่ได้ยิน</li>
+                      <li>เขียนคำลงในกระดานด้วยนิ้ว เมาส์ หรือปากกา</li>
+                      <li>เรียงถูก + เขียนแล้ว จะได้ 1 คะแนน</li>
                     </ul>
                   </div>
                 </div>
@@ -946,7 +1042,7 @@ function App() {
             </section>
           )}
 
-          {activeTab === 'score' && (
+          {activeTab === "score" && (
             <section className="screenCard">
               <div className="sectionTitle">คะแนนของฉัน</div>
 
@@ -969,25 +1065,22 @@ function App() {
 
                 <div className="leaderboardList">
                   {leaderboard.map((item, index) => {
-                    const isMe = user?.uid === item.uid;
+                    const isMe = user.uid === item.uid;
+
                     return (
-                      <div key={item.uid} className={isMe ? 'leaderItem me' : 'leaderItem'}>
+                      <div key={item.uid} className={isMe ? "leaderItem me" : "leaderItem"}>
                         <div className="leaderLeft">
                           <div className="leaderRank">{index + 1}</div>
-                          <div className="leaderAvatar">
-                            {item.avatarUrl ? (
-                              <img src={item.avatarUrl} alt={item.name} />
-                            ) : (
-                              <span>🧒</span>
-                            )}
-                          </div>
+                          <div className="leaderAvatar">{item.avatarEmoji || "🧒"}</div>
+
                           <div>
                             <div className="leaderName">
-                              {item.name} {isMe ? '(ฉัน)' : ''}
+                              {item.name} {isMe ? "(ฉัน)" : ""}
                             </div>
-                            <div className="leaderClass">{item.className || 'ยังไม่ได้ระบุห้อง'}</div>
+                            <div className="leaderClass">{item.className || "ยังไม่ได้ระบุห้อง"}</div>
                           </div>
                         </div>
+
                         <div className="leaderCoins">{item.coins} คะแนน</div>
                       </div>
                     );
@@ -997,7 +1090,7 @@ function App() {
             </section>
           )}
 
-          {activeTab === 'shop' && (
+          {activeTab === "shop" && (
             <section className="screenCard">
               <div className="sectionTitle">ร้านของรางวัล</div>
 
@@ -1013,11 +1106,12 @@ function App() {
                       <div className="rewardCost">{reward.cost} คะแนน</div>
 
                       <button
-                        className={claimed ? 'rewardBtn done' : canClaim ? 'rewardBtn' : 'rewardBtn disabled'}
+                        className={claimed ? "rewardBtn done" : canClaim ? "rewardBtn" : "rewardBtn disabled"}
                         onClick={() => handleClaimReward(reward.id)}
                         disabled={!canClaim}
+                        type="button"
                       >
-                        {claimed ? 'รับแล้ว' : canClaim ? 'แลกรางวัล' : 'คะแนนไม่พอ'}
+                        {claimed ? "รับแล้ว" : canClaim ? "แลกรางวัล" : "คะแนนไม่พอ"}
                       </button>
                     </div>
                   );
@@ -1030,34 +1124,33 @@ function App() {
             </section>
           )}
 
-          {activeTab === 'profile' && (
+          {activeTab === "profile" && (
             <section className="screenCard">
               <div className="sectionTitle">โปรไฟล์</div>
 
               <div className="profileGrid">
                 <div className="profileMain glassCard">
                   <div className="profileHeader">
-                    <div className="profileAvatarLarge">
-                      {profile.avatarUrl ? (
-                        <img src={profile.avatarUrl} alt="profile" />
-                      ) : (
-                        <span>🧒</span>
-                      )}
-                    </div>
+                    <div className="profileAvatarLarge">{profile.avatarEmoji || "🧒"}</div>
 
                     <div className="profileUploadBlock">
-                      <div className="cardTitle">รูปโปรไฟล์</div>
-                      <label className="uploadBtn">
-                        {uploadingAvatar ? 'กำลังอัปโหลด...' : 'อัปโหลดรูปหน้าตัวเอง'}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleAvatarUpload}
-                          disabled={uploadingAvatar}
-                        />
-                      </label>
+                      <div className="cardTitle">Avatar ของฉัน</div>
+
+                      <div className="avatarChoices">
+                        {AVATAR_OPTIONS.map((emoji) => (
+                          <button
+                            key={emoji}
+                            className={profile.avatarEmoji === emoji ? "avatarChoice active" : "avatarChoice"}
+                            onClick={() => handleAvatarChange(emoji)}
+                            type="button"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+
                       <div className="smallHint">
-                        รูปนี้จะถูกใช้แสดงในหน้า leaderboard ให้เพื่อนเห็น
+                        ใช้ Avatar แทนการอัปโหลดรูป เพื่อให้ระบบไม่ต้องใช้ Firebase Storage และใช้งานฟรีได้ง่ายขึ้น
                       </div>
                     </div>
                   </div>
@@ -1067,9 +1160,7 @@ function App() {
                     <input
                       value={profile.name}
                       onChange={(e) =>
-                        setProfile((prev) =>
-                          prev ? { ...prev, name: e.target.value } : prev
-                        )
+                        setProfile((prev) => (prev ? { ...prev, name: e.target.value } : prev))
                       }
                     />
 
@@ -1077,9 +1168,7 @@ function App() {
                     <input
                       value={profile.className}
                       onChange={(e) =>
-                        setProfile((prev) =>
-                          prev ? { ...prev, className: e.target.value } : prev
-                        )
+                        setProfile((prev) => (prev ? { ...prev, className: e.target.value } : prev))
                       }
                       placeholder="เช่น ป.1/1"
                     />
@@ -1087,8 +1176,8 @@ function App() {
                     <label>Email</label>
                     <input value={profile.email} disabled />
 
-                    <button className="saveProfileBtn" onClick={handleProfileSave} disabled={savingProfile}>
-                      {savingProfile ? 'กำลังบันทึก...' : 'บันทึกข้อมูล'}
+                    <button className="saveProfileBtn" onClick={handleProfileSave} disabled={savingProfile} type="button">
+                      {savingProfile ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
                     </button>
                   </div>
                 </div>
@@ -1100,12 +1189,14 @@ function App() {
                     {THEME_OPTIONS.map((theme) => (
                       <button
                         key={theme.key}
-                        className={profile.theme === theme.key ? 'themeChoice active' : 'themeChoice'}
+                        className={profile.theme === theme.key ? "themeChoice active" : "themeChoice"}
                         onClick={() => handleThemeChange(theme.key)}
+                        type="button"
                       >
                         <div className="themePreview">
-                          <div className={`themeMini ${getThemeClass(theme.key)}`} />
+                          <div className={`themeMini ${theme.cssClass}`} />
                         </div>
+
                         <div className="themeInfo">
                           <div className="themeName">
                             {theme.emoji} {theme.title}
@@ -1123,30 +1214,38 @@ function App() {
 
         <nav className="bottomNav glassCard">
           <button
-            className={activeTab === 'learn' ? 'navItem active' : 'navItem'}
-            onClick={() => setActiveTab('learn')}
+            className={activeTab === "learn" ? "navItem active" : "navItem"}
+            onClick={() => setActiveTab("learn")}
+            type="button"
           >
             📘 เรียน
           </button>
+
           <button
-            className={activeTab === 'score' ? 'navItem active' : 'navItem'}
-            onClick={() => setActiveTab('score')}
+            className={activeTab === "score" ? "navItem active" : "navItem"}
+            onClick={() => setActiveTab("score")}
+            type="button"
           >
             🏆 คะแนน
           </button>
+
           <button
-            className={activeTab === 'shop' ? 'navItem active' : 'navItem'}
-            onClick={() => setActiveTab('shop')}
+            className={activeTab === "shop" ? "navItem active" : "navItem"}
+            onClick={() => setActiveTab("shop")}
+            type="button"
           >
             🎁 ร้านค้า
           </button>
+
           <button
-            className={activeTab === 'profile' ? 'navItem active' : 'navItem'}
-            onClick={() => setActiveTab('profile')}
+            className={activeTab === "profile" ? "navItem active" : "navItem"}
+            onClick={() => setActiveTab("profile")}
+            type="button"
           >
             👤 โปรไฟล์
           </button>
-          <button className="navItem logout" onClick={handleLogout}>
+
+          <button className="navItem logout" onClick={handleLogout} type="button">
             🚪 ออก
           </button>
         </nav>
