@@ -64,6 +64,7 @@ interface RewardItem {
   title: string;
   cost: number;
   emoji: string;
+  description: string;
 }
 
 const ENGLISH_WORDS: WordItem[] = [
@@ -144,9 +145,41 @@ const THEME_OPTIONS: {
 const AVATAR_OPTIONS = ["👦", "👧", "🧒", "🐰", "🦊", "🐼", "🐥", "⭐", "🚀", "🧸"];
 
 const REWARD_ITEMS: RewardItem[] = [
-  { id: "reward-100", title: "โหลด 1 เกมส์", cost: 100, emoji: "🎮" },
-  { id: "reward-200", title: "กินสุกี้ BONUS", cost: 200, emoji: "🍲" },
-  { id: "reward-300", title: "ได้ของเล่น 1 ชิ้น", cost: 300, emoji: "🧸" },
+  {
+    id: "reward-80-orange-soda",
+    title: "น้ำส้มโซดา",
+    cost: 80,
+    emoji: "🥤",
+    description: "แลกเครื่องดื่มสดชื่น 1 แก้ว",
+  },
+  {
+    id: "reward-100-game",
+    title: "โหลด 1 เกมส์",
+    cost: 100,
+    emoji: "🎮",
+    description: "สะสมครบ 100 คะแนน โหลดเกมได้ 1 เกม",
+  },
+  {
+    id: "reward-200-suki",
+    title: "กินสุกี้ BONUS",
+    cost: 200,
+    emoji: "🍲",
+    description: "รางวัลมื้อพิเศษสำหรับคนขยันฝึก",
+  },
+  {
+    id: "reward-250-youtube",
+    title: "Youtube ธรรมดา 3 วัน",
+    cost: 250,
+    emoji: "▶️",
+    description: "แลกสิทธิ์ดู Youtube ธรรมดา 3 วัน",
+  },
+  {
+    id: "reward-300-toy",
+    title: "ได้ของเล่น 1 ชิ้น",
+    cost: 300,
+    emoji: "🧸",
+    description: "สะสมครบ 300 คะแนน ได้ของเล่น 1 ชิ้น",
+  },
 ];
 
 const DEFAULT_THEME: ThemeKey = "yellowBunny";
@@ -255,11 +288,14 @@ function App() {
   const [authError, setAuthError] = useState("");
 
   const [activeTab, setActiveTab] = useState<TabKey>("learn");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const [lessonStarted, setLessonStarted] = useState(false);
   const [language, setLanguage] = useState<LangKey>("en");
   const [wordIndex, setWordIndex] = useState(0);
   const [letterBank, setLetterBank] = useState<string[]>([]);
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
-  const [feedback, setFeedback] = useState("เรียงตัวอักษรและเขียนคำศัพท์ แล้วกดตรวจคำตอบ");
+  const [feedback, setFeedback] = useState("พร้อมตรวจ");
   const [checkState, setCheckState] = useState<CheckState>("idle");
   const [showAnswer, setShowAnswer] = useState(false);
   const [leaderboard, setLeaderboard] = useState<PublicProfile[]>([]);
@@ -279,6 +315,8 @@ function App() {
 
   const selectedText = selectedIndices.map((index) => letterBank[index]).join("");
   const normalizedSelectedText = language === "en" ? selectedText.toLowerCase() : selectedText;
+  const isLettersComplete = selectedIndices.length === expectedChars.length;
+  const isLettersCorrect = normalizedSelectedText === normalizeWord(currentWord.text, currentWord.lang);
 
   const currentTheme = useMemo(() => {
     const key = profile ? normalizeTheme(profile.theme) : DEFAULT_THEME;
@@ -358,17 +396,21 @@ function App() {
 
     setLetterBank(buildLetterBank(currentWord.text, currentWord.lang));
     setSelectedIndices([]);
-    setFeedback("ฟังเสียง → เรียงตัวอักษร → เขียนคำศัพท์ → กดตรวจคำตอบ");
+    setFeedback("พร้อมตรวจ");
     setCheckState("idle");
     setShowAnswer(false);
     clearCanvas();
 
-    const timer = window.setTimeout(() => {
-      speakWord(currentWord.text, currentWord.lang);
-    }, 350);
+    if (lessonStarted) {
+      const timer = window.setTimeout(() => {
+        speakWord(currentWord.text, currentWord.lang);
+      }, 350);
 
-    return () => window.clearTimeout(timer);
-  }, [currentWord]);
+      return () => window.clearTimeout(timer);
+    }
+
+    return undefined;
+  }, [currentWord, lessonStarted]);
 
   useEffect(() => {
     setupCanvas();
@@ -462,6 +504,12 @@ function App() {
     }
   }
 
+  function startLesson() {
+    setLessonStarted(true);
+    setFeedback("เริ่มเรียนแล้ว ฟังเสียงและทำแบบฝึกได้เลย");
+    window.setTimeout(() => speakWord(currentWord.text, currentWord.lang), 200);
+  }
+
   function speakWord(text: string, lang: LangKey) {
     if (!window.speechSynthesis) return;
 
@@ -518,6 +566,7 @@ function App() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     hasDrawnRef.current = false;
+    setCheckState("idle");
   }
 
   function getPointerPosition(event: React.PointerEvent<HTMLCanvasElement>) {
@@ -753,6 +802,7 @@ function App() {
   async function handleLogout() {
     await signOut(auth);
     setActiveTab("learn");
+    setMobileMenuOpen(false);
     setProfile(null);
   }
 
@@ -764,6 +814,11 @@ function App() {
     if (index === -1) return "-";
 
     return `#${index + 1}`;
+  }
+
+  function changeTab(tab: TabKey) {
+    setActiveTab(tab);
+    setMobileMenuOpen(false);
   }
 
   if (authLoading || profileLoading) {
@@ -780,64 +835,73 @@ function App() {
   if (!user || !profile) {
     return (
       <div className="authPage">
-        <div className="authCard">
-          <div className="authBrand">Word Star Kids</div>
-          <p className="authSub">เข้าสู่ระบบเพื่อเก็บคะแนนและแข่งกับเพื่อน</p>
-
-          <div className="authSwitch">
-            <button
-              className={authMode === "login" ? "authSwitchBtn active" : "authSwitchBtn"}
-              onClick={() => setAuthMode("login")}
-              type="button"
-            >
-              Login
-            </button>
-
-            <button
-              className={authMode === "register" ? "authSwitchBtn active" : "authSwitchBtn"}
-              onClick={() => setAuthMode("register")}
-              type="button"
-            >
-              Register
-            </button>
+        <div className="browserFrame authBrowser">
+          <div className="browserChrome">
+            <span></span>
+            <span></span>
+            <span></span>
+            <div>app.wordstarkids.com</div>
           </div>
 
-          {authMode === "register" && (
-            <>
-              <label>ชื่อเด็ก</label>
-              <input
-                value={registerName}
-                onChange={(e) => setRegisterName(e.target.value)}
-                placeholder="เช่น น้องต้นกล้า"
-              />
+          <div className="authCard">
+            <div className="authBrand">Word Star Kids</div>
+            <p className="authSub">เข้าสู่ระบบเพื่อเก็บคะแนนและแข่งกับเพื่อน</p>
 
-              <label>ห้องเรียน</label>
-              <input
-                value={registerClassName}
-                onChange={(e) => setRegisterClassName(e.target.value)}
-                placeholder="เช่น ป.1/1"
-              />
-            </>
-          )}
+            <div className="authSwitch">
+              <button
+                className={authMode === "login" ? "authSwitchBtn active" : "authSwitchBtn"}
+                onClick={() => setAuthMode("login")}
+                type="button"
+              >
+                Login
+              </button>
 
-          <label>Email</label>
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="เช่น pond01@wordstar.local"
-          />
+              <button
+                className={authMode === "register" ? "authSwitchBtn active" : "authSwitchBtn"}
+                onClick={() => setAuthMode("register")}
+                type="button"
+              >
+                Register
+              </button>
+            </div>
 
-          <label>Password</label>
-          <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" />
+            {authMode === "register" && (
+              <>
+                <label>ชื่อเด็ก</label>
+                <input
+                  value={registerName}
+                  onChange={(e) => setRegisterName(e.target.value)}
+                  placeholder="เช่น น้องต้นกล้า"
+                />
 
-          {authError && <div className="authError">{authError}</div>}
+                <label>ห้องเรียน</label>
+                <input
+                  value={registerClassName}
+                  onChange={(e) => setRegisterClassName(e.target.value)}
+                  placeholder="เช่น ป.1/1"
+                />
+              </>
+            )}
 
-          <button className="authSubmit" onClick={handleAuthSubmit} type="button">
-            {authMode === "login" ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}
-          </button>
+            <label>Email</label>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="เช่น pond01@wordstar.local"
+            />
 
-          <div className="authHint">
-            ช่วงทดลองสามารถใช้ email สมมติได้ เช่น pond01@wordstar.local และ password อย่างน้อย 6 ตัว
+            <label>Password</label>
+            <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" />
+
+            {authError && <div className="authError">{authError}</div>}
+
+            <button className="authSubmit" onClick={handleAuthSubmit} type="button">
+              {authMode === "login" ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}
+            </button>
+
+            <div className="authHint">
+              ช่วงทดลองสามารถใช้ email สมมติได้ เช่น pond01@wordstar.local และ password อย่างน้อย 6 ตัว
+            </div>
           </div>
         </div>
       </div>
@@ -848,83 +912,107 @@ function App() {
     <div className={`appShell ${currentTheme.cssClass}`}>
       <div className="appOverlay" />
 
-      <div className="appContainer">
-        <header className="topBar glassCard">
-          <div>
-            <div className="brandTitle">Word Star Kids</div>
-            <div className="brandSub">เรียนคำศัพท์ • สนุกทุกวัน • เก่งขึ้นทุกวัน</div>
-          </div>
+      <div className="browserFrame appBrowser">
+        <div className="browserChrome">
+          <span></span>
+          <span></span>
+          <span></span>
+          <div>app.wordstarkids.com</div>
+        </div>
 
-          <div className="topBarRight">
-            <div className="coinBadge">🪙 {profile.coins}</div>
-            <div className="rankBadge">🏆 {getRank()}</div>
-            <div className="avatarBadge">{profile.avatarEmoji || "🧒"}</div>
-          </div>
-        </header>
+        <div className="appContainer">
+          <header className="topBar glassCard">
+            <div>
+              <div className="brandTitle">Word Star Kids</div>
+              <div className="brandSub">เรียนคำศัพท์ • สนุกทุกวัน • เก่งขึ้นทุกวัน</div>
+            </div>
 
-        <main className="mainContent">
-          {activeTab === "learn" && (
-            <section className="screenCard lessonScreen">
-              <div className="sectionTitle">ฝึกเขียนคำศัพท์</div>
+            <div className="topBarRight">
+              <div className="coinBadge">🪙 {profile.coins} คะแนน</div>
+              <div className="rankBadge">🏆 {getRank()}</div>
+              <div className="avatarBadge">{profile.avatarEmoji || "🧒"}</div>
+            </div>
+          </header>
 
-              <div className="languageTabs">
-                <button
-                  className={language === "en" ? "langBtn active" : "langBtn"}
-                  onClick={() => {
-                    setLanguage("en");
-                    setWordIndex(0);
-                  }}
-                  type="button"
-                >
-                  GB ภาษาอังกฤษ
-                </button>
+          <main className="mainContent">
+            {activeTab === "learn" && (
+              <section className="screenCard lessonScreen">
+                <div className="sectionTitle">ฝึกฟัง เรียงคำ และเขียน</div>
 
-                <button
-                  className={language === "th" ? "langBtn active" : "langBtn"}
-                  onClick={() => {
-                    setLanguage("th");
-                    setWordIndex(0);
-                  }}
-                  type="button"
-                >
-                  TH ภาษาไทย
-                </button>
+                <div className="languageTabs">
+                  <button
+                    className={language === "en" ? "langBtn active" : "langBtn"}
+                    onClick={() => {
+                      setLanguage("en");
+                      setWordIndex(0);
+                    }}
+                    type="button"
+                  >
+                    ภาษาอังกฤษ
+                  </button>
 
-                <button
-                  className={showAnswer ? "langBtn answer active" : "langBtn answer"}
-                  onClick={() => setShowAnswer((prev) => !prev)}
-                  type="button"
-                >
-                  {showAnswer ? "ซ่อนเฉลย" : "ดูคำเฉลย"}
-                </button>
-              </div>
+                  <button
+                    className={language === "th" ? "langBtn active" : "langBtn"}
+                    onClick={() => {
+                      setLanguage("th");
+                      setWordIndex(0);
+                    }}
+                    type="button"
+                  >
+                    ภาษาไทย
+                  </button>
 
-              <div className="heroPrompt glassCard">
-                <div className="heroPromptIcon">{currentTheme.emoji}</div>
-
-                <div className="heroPromptCenter">
-                  <div className="bigQuestion">{showAnswer ? currentWord.text : "?"}</div>
-                  <div className="heroPromptText">
-                    ฟังเสียง → เรียงตัวอักษร → เขียนคำนี้ลงในช่อง
-                  </div>
-                  <div className="wordMeaning">{showAnswer ? currentWord.meaning : ""}</div>
+                  <button
+                    className={showAnswer ? "langBtn answer active" : "langBtn answer"}
+                    onClick={() => setShowAnswer((prev) => !prev)}
+                    type="button"
+                  >
+                    ดูคำเฉลย
+                  </button>
                 </div>
 
-                <button
-                  className="speakButton"
-                  onClick={() => speakWord(currentWord.text, currentWord.lang)}
-                  type="button"
-                >
-                  🔊 ฟังเสียง
-                </button>
-              </div>
+                <div className="startLessonCard">
+                  <button className="startLessonBtn" onClick={startLesson} type="button">
+                    ▶ เริ่มเรียน
+                  </button>
+                  <p>กดเริ่มเรียน 1 ครั้ง หลังจากนั้นเมื่อเปลี่ยนคำ ระบบจะอ่านเสียงให้อัตโนมัติ</p>
+                </div>
 
-              <div className="lessonGrid">
-                <div className="leftColumn">
+                <div className="soundPanel glassCard">
+                  <div className="soundIcon">🔊</div>
+
+                  <div className="soundText">
+                    <h3>โจทย์เสียง</h3>
+                    <p>ฟังเสียง แล้วเรียงตัวอักษรให้ถูก จากนั้นเขียนคำศัพท์บนกระดาน</p>
+
+                    <div className="soundMeta">
+                      {showAnswer ? `${currentWord.text} = ${currentWord.meaning}` : `คำนี้มี ${expectedChars.length} ช่อง`}
+                    </div>
+                  </div>
+
+                  <button
+                    className="speakAgainBtn"
+                    onClick={() => speakWord(currentWord.text, currentWord.lang)}
+                    type="button"
+                  >
+                    ฟังเสียงซ้ำ
+                  </button>
+                </div>
+
+                <div className="learnStack">
                   <div className="practiceCard glassCard">
-                    <div className="cardTitle">1) เรียงตัวอักษรให้ถูกต้อง</div>
+                    <div className="cardHeaderRow">
+                      <div>
+                        <div className="cardTitle">1) เรียงตัวอักษร</div>
+                        <div className="cardSub">แตะตัวอักษรจากถาด เพื่อวางในช่องคำตอบ</div>
+                      </div>
 
-                    <div className="answerSlots">
+                      <button className="textMiniBtn" onClick={handleResetLetters} type="button">
+                        ล้างตัวอักษร
+                      </button>
+                    </div>
+
+                    <div className="answerSlots centered">
                       {expectedChars.map((_, slotIndex) => (
                         <div className="answerSlot" key={`slot-${slotIndex}`}>
                           {selectedIndices[slotIndex] !== undefined ? letterBank[selectedIndices[slotIndex]] : ""}
@@ -932,37 +1020,40 @@ function App() {
                       ))}
                     </div>
 
-                    <div className="letterTray">
-                      {letterBank.map((char, index) => {
-                        const used = selectedIndices.includes(index);
+                    <div className="letterTrayBox">
+                      <div className="trayLabel">ถาดตัวอักษร</div>
 
-                        return (
-                          <button
-                            key={`${char}-${index}`}
-                            className={used ? "letterButton used" : "letterButton"}
-                            onClick={() => handlePickLetter(index)}
-                            disabled={used}
-                            type="button"
-                          >
-                            {char}
-                          </button>
-                        );
-                      })}
-                    </div>
+                      <div className="letterTray">
+                        {letterBank.map((char, index) => {
+                          const used = selectedIndices.includes(index);
 
-                    <div className="miniControls">
-                      <button className="miniBtn" onClick={handleRemoveLastLetter} type="button">
-                        ↩ ลบตัวท้าย
-                      </button>
-
-                      <button className="miniBtn" onClick={handleResetLetters} type="button">
-                        🧽 ล้างคำ
-                      </button>
+                          return (
+                            <button
+                              key={`${char}-${index}`}
+                              className={used ? "letterButton used" : "letterButton"}
+                              onClick={() => handlePickLetter(index)}
+                              disabled={used}
+                              type="button"
+                            >
+                              {char}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
 
                   <div className="practiceCard glassCard">
-                    <div className="cardTitle">2) เขียนคำศัพท์ตรงนี้</div>
+                    <div className="cardHeaderRow">
+                      <div>
+                        <div className="cardTitle">2) เขียนคำศัพท์</div>
+                        <div className="cardSub">เขียนด้วยนิ้ว ปากกา tablet หรือเมาส์</div>
+                      </div>
+
+                      <button className="textMiniBtn" onClick={clearCanvas} type="button">
+                        ล้างกระดาน
+                      </button>
+                    </div>
 
                     <div className="writingPad" ref={canvasWrapRef}>
                       <div className="writingLines" />
@@ -976,279 +1067,255 @@ function App() {
                         onPointerLeave={handlePointerUp}
                       />
 
-                      <button className="clearCanvasBtn" onClick={clearCanvas} type="button">
-                        ✏️ ล้างเส้น
-                      </button>
+                      <div className="pencilMark">✏️</div>
+                    </div>
+                  </div>
+
+                  <div className="checkArea">
+                    <div className={checkState === "success" ? "resultCard success" : checkState === "error" ? "resultCard error" : "resultCard"}>
+                      <div className="resultEmoji">{checkState === "success" ? "⭐" : checkState === "error" ? "🙂" : "✨"}</div>
+                      <div className="resultTitle">
+                        {checkState === "success" ? "ยอดเยี่ยม!" : checkState === "error" ? "ลองอีกครั้ง" : "พร้อมตรวจ"}
+                      </div>
+                      <div className="resultText">{feedback}</div>
                     </div>
 
-                    <div className="actionRow">
-                      <button className="navBtn" onClick={handlePrevWord} type="button">
-                        ← คำก่อนหน้า
-                      </button>
+                    <div className="checkPanel glassCard">
+                      <div className="miniStatus">
+                        <span>เรียงครบ</span>
+                        <b>{isLettersComplete ? "ครบแล้ว" : "ยังไม่ครบ"}</b>
+                      </div>
+
+                      <div className="miniStatus">
+                        <span>เรียงถูก</span>
+                        <b>{isLettersCorrect ? "ถูกแล้ว" : "รอตรวจ"}</b>
+                      </div>
+
+                      <div className="miniStatus">
+                        <span>เขียนแล้ว</span>
+                        <b>{hasDrawnRef.current ? "เขียนแล้ว" : "ยังไม่ได้เขียน"}</b>
+                      </div>
 
                       <button className="checkBtn" onClick={handleCheckAnswer} type="button">
-                        ✅ ตรวจคำตอบ
-                      </button>
-
-                      <button className="navBtn" onClick={handleNextWord} type="button">
-                        คำถัดไป →
+                        ตรวจคำตอบ
                       </button>
                     </div>
                   </div>
-                </div>
 
-                <div className="rightColumn">
-                  <div
-                    className={
-                      checkState === "success"
-                        ? "resultCard success"
-                        : checkState === "error"
-                          ? "resultCard error"
-                          : "resultCard"
-                    }
-                  >
-                    <div className="resultEmoji">
-                      {checkState === "success" ? "⭐" : checkState === "error" ? "🙂" : "✨"}
-                    </div>
+                  <div className="wordNavRow">
+                    <button className="wordNavBtn" onClick={handlePrevWord} type="button">
+                      ← คำก่อนหน้า
+                    </button>
 
-                    <div className="resultTitle">
-                      {checkState === "success" ? "ยอดเยี่ยม!" : checkState === "error" ? "ลองอีกครั้ง" : "พร้อมตรวจ"}
-                    </div>
-
-                    <div className="resultText">{feedback}</div>
-                  </div>
-
-                  <div className="infoCard glassCard">
-                    <div className="cardTitle">สถานะปัจจุบัน</div>
-                    <div className="infoLine">ภาษา: {language === "en" ? "อังกฤษ" : "ไทย"}</div>
-                    <div className="infoLine">
-                      คำที่: {wordIndex + 1} / {currentWords.length}
-                    </div>
-                    <div className="infoLine">คะแนนของฉัน: {profile.coins} คะแนน</div>
-                    <div className="infoLine">ธีม: {currentTheme.title}</div>
-                  </div>
-
-                  <div className="infoCard glassCard">
-                    <div className="cardTitle">วิธีเล่น</div>
-                    <ul className="tipsList">
-                      <li>ระบบอ่านเสียงอัตโนมัติเมื่อเปลี่ยนคำ</li>
-                      <li>กดตัวอักษรจากถาดให้เรียงเป็นคำที่ได้ยิน</li>
-                      <li>เขียนคำลงในกระดานด้วยนิ้ว เมาส์ หรือปากกา</li>
-                      <li>เรียงถูก + เขียนแล้ว จะได้ 1 คะแนน</li>
-                    </ul>
+                    <button className="wordNavBtn" onClick={handleNextWord} type="button">
+                      คำถัดไป →
+                    </button>
                   </div>
                 </div>
-              </div>
-            </section>
-          )}
+              </section>
+            )}
 
-          {activeTab === "score" && (
-            <section className="screenCard">
-              <div className="sectionTitle">คะแนนของฉัน</div>
+            {activeTab === "score" && (
+              <section className="screenCard">
+                <div className="sectionTitle">คะแนนของฉัน</div>
 
-              <div className="scoreTopRow">
-                <div className="scoreBox glassCard">
-                  <div className="scoreIcon">🪙</div>
-                  <div className="scoreLabel">คะแนนปัจจุบัน</div>
-                  <div className="scoreValue">{profile.coins}</div>
+                <div className="scoreTopRow">
+                  <div className="scoreBox glassCard">
+                    <div className="scoreIcon">🪙</div>
+                    <div className="scoreLabel">คะแนนปัจจุบัน</div>
+                    <div className="scoreValue">{profile.coins}</div>
+                  </div>
+
+                  <div className="scoreBox glassCard">
+                    <div className="scoreIcon">🏆</div>
+                    <div className="scoreLabel">อันดับของฉัน</div>
+                    <div className="scoreValue">{getRank()}</div>
+                  </div>
                 </div>
 
-                <div className="scoreBox glassCard">
-                  <div className="scoreIcon">🏆</div>
-                  <div className="scoreLabel">อันดับของฉัน</div>
-                  <div className="scoreValue">{getRank()}</div>
+                <div className="leaderboardCard glassCard">
+                  <div className="cardTitle">ตารางอันดับเพื่อน</div>
+
+                  <div className="leaderboardList">
+                    {leaderboard.map((item, index) => {
+                      const isMe = user.uid === item.uid;
+
+                      return (
+                        <div key={item.uid} className={isMe ? "leaderItem me" : "leaderItem"}>
+                          <div className="leaderLeft">
+                            <div className="leaderRank">{index + 1}</div>
+                            <div className="leaderAvatar">{item.avatarEmoji || "🧒"}</div>
+
+                            <div>
+                              <div className="leaderName">
+                                {item.name} {isMe ? "(ฉัน)" : ""}
+                              </div>
+                              <div className="leaderClass">{item.className || "ยังไม่ได้ระบุห้อง"}</div>
+                            </div>
+                          </div>
+
+                          <div className="leaderCoins">{item.coins} คะแนน</div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              </section>
+            )}
 
-              <div className="leaderboardCard glassCard">
-                <div className="cardTitle">ตารางอันดับเพื่อน</div>
+            {activeTab === "shop" && (
+              <section className="screenCard">
+                <div className="sectionTitle">ร้านของรางวัล</div>
 
-                <div className="leaderboardList">
-                  {leaderboard.map((item, index) => {
-                    const isMe = user.uid === item.uid;
+                <div className="shopGrid">
+                  {REWARD_ITEMS.map((reward) => {
+                    const claimed = profile.claimedRewardIds.includes(reward.id);
+                    const canClaim = profile.coins >= reward.cost && !claimed;
 
                     return (
-                      <div key={item.uid} className={isMe ? "leaderItem me" : "leaderItem"}>
-                        <div className="leaderLeft">
-                          <div className="leaderRank">{index + 1}</div>
-                          <div className="leaderAvatar">{item.avatarEmoji || "🧒"}</div>
+                      <div key={reward.id} className="rewardCard glassCard">
+                        <div className="rewardEmoji">{reward.emoji}</div>
+                        <div className="rewardTitle">{reward.title}</div>
+                        <div className="rewardCost">{reward.cost} คะแนน</div>
+                        <div className="rewardDesc">{reward.description}</div>
 
-                          <div>
-                            <div className="leaderName">
-                              {item.name} {isMe ? "(ฉัน)" : ""}
-                            </div>
-                            <div className="leaderClass">{item.className || "ยังไม่ได้ระบุห้อง"}</div>
-                          </div>
-                        </div>
-
-                        <div className="leaderCoins">{item.coins} คะแนน</div>
+                        <button
+                          className={claimed ? "rewardBtn done" : canClaim ? "rewardBtn" : "rewardBtn disabled"}
+                          onClick={() => handleClaimReward(reward.id)}
+                          disabled={!canClaim}
+                          type="button"
+                        >
+                          {claimed ? "รับแล้ว" : canClaim ? "แลกรางวัล" : "คะแนนไม่พอ"}
+                        </button>
                       </div>
                     );
                   })}
                 </div>
-              </div>
-            </section>
-          )}
 
-          {activeTab === "shop" && (
-            <section className="screenCard">
-              <div className="sectionTitle">ร้านของรางวัล</div>
-
-              <div className="shopGrid">
-                {REWARD_ITEMS.map((reward) => {
-                  const claimed = profile.claimedRewardIds.includes(reward.id);
-                  const canClaim = profile.coins >= reward.cost && !claimed;
-
-                  return (
-                    <div key={reward.id} className="rewardCard glassCard">
-                      <div className="rewardEmoji">{reward.emoji}</div>
-                      <div className="rewardTitle">{reward.title}</div>
-                      <div className="rewardCost">{reward.cost} คะแนน</div>
-
-                      <button
-                        className={claimed ? "rewardBtn done" : canClaim ? "rewardBtn" : "rewardBtn disabled"}
-                        onClick={() => handleClaimReward(reward.id)}
-                        disabled={!canClaim}
-                        type="button"
-                      >
-                        {claimed ? "รับแล้ว" : canClaim ? "แลกรางวัล" : "คะแนนไม่พอ"}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="shopNote glassCard">
-                คะแนนของฉันตอนนี้: <strong>{profile.coins}</strong> คะแนน
-              </div>
-            </section>
-          )}
-
-          {activeTab === "profile" && (
-            <section className="screenCard">
-              <div className="sectionTitle">โปรไฟล์</div>
-
-              <div className="profileGrid">
-                <div className="profileMain glassCard">
-                  <div className="profileHeader">
-                    <div className="profileAvatarLarge">{profile.avatarEmoji || "🧒"}</div>
-
-                    <div className="profileUploadBlock">
-                      <div className="cardTitle">Avatar ของฉัน</div>
-
-                      <div className="avatarChoices">
-                        {AVATAR_OPTIONS.map((emoji) => (
-                          <button
-                            key={emoji}
-                            className={profile.avatarEmoji === emoji ? "avatarChoice active" : "avatarChoice"}
-                            onClick={() => handleAvatarChange(emoji)}
-                            type="button"
-                          >
-                            {emoji}
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="smallHint">
-                        ใช้ Avatar แทนการอัปโหลดรูป เพื่อให้ระบบไม่ต้องใช้ Firebase Storage และใช้งานฟรีได้ง่ายขึ้น
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="profileForm">
-                    <label>ชื่อเด็ก</label>
-                    <input
-                      value={profile.name}
-                      onChange={(e) =>
-                        setProfile((prev) => (prev ? { ...prev, name: e.target.value } : prev))
-                      }
-                    />
-
-                    <label>ห้องเรียน</label>
-                    <input
-                      value={profile.className}
-                      onChange={(e) =>
-                        setProfile((prev) => (prev ? { ...prev, className: e.target.value } : prev))
-                      }
-                      placeholder="เช่น ป.1/1"
-                    />
-
-                    <label>Email</label>
-                    <input value={profile.email} disabled />
-
-                    <button className="saveProfileBtn" onClick={handleProfileSave} disabled={savingProfile} type="button">
-                      {savingProfile ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
-                    </button>
-                  </div>
+                <div className="shopNote glassCard">
+                  คะแนนของฉันตอนนี้: <strong>{profile.coins}</strong> คะแนน
                 </div>
+              </section>
+            )}
 
-                <div className="themePanel glassCard">
-                  <div className="cardTitle">เลือกธีมของฉัน</div>
+            {activeTab === "profile" && (
+              <section className="screenCard">
+                <div className="sectionTitle">โปรไฟล์</div>
 
-                  <div className="themeList">
-                    {THEME_OPTIONS.map((theme) => (
-                      <button
-                        key={theme.key}
-                        className={profile.theme === theme.key ? "themeChoice active" : "themeChoice"}
-                        onClick={() => handleThemeChange(theme.key)}
-                        type="button"
-                      >
-                        <div className="themePreview">
-                          <div className={`themeMini ${theme.cssClass}`} />
+                <div className="profileGrid">
+                  <div className="profileMain glassCard">
+                    <div className="profileHeader">
+                      <div className="profileAvatarLarge">{profile.avatarEmoji || "🧒"}</div>
+
+                      <div className="profileUploadBlock">
+                        <div className="cardTitle">Avatar ของฉัน</div>
+
+                        <div className="avatarChoices">
+                          {AVATAR_OPTIONS.map((emoji) => (
+                            <button
+                              key={emoji}
+                              className={profile.avatarEmoji === emoji ? "avatarChoice active" : "avatarChoice"}
+                              onClick={() => handleAvatarChange(emoji)}
+                              type="button"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
                         </div>
 
-                        <div className="themeInfo">
-                          <div className="themeName">
-                            {theme.emoji} {theme.title}
+                        <div className="smallHint">
+                          ใช้ Avatar แทนการอัปโหลดรูป เพื่อให้ระบบไม่ต้องใช้ Firebase Storage และใช้งานฟรีได้ง่ายขึ้น
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="profileForm">
+                      <label>ชื่อเด็ก</label>
+                      <input
+                        value={profile.name}
+                        onChange={(e) => setProfile((prev) => (prev ? { ...prev, name: e.target.value } : prev))}
+                      />
+
+                      <label>ห้องเรียน</label>
+                      <input
+                        value={profile.className}
+                        onChange={(e) => setProfile((prev) => (prev ? { ...prev, className: e.target.value } : prev))}
+                        placeholder="เช่น ป.1/1"
+                      />
+
+                      <label>Email</label>
+                      <input value={profile.email} disabled />
+
+                      <button className="saveProfileBtn" onClick={handleProfileSave} disabled={savingProfile} type="button">
+                        {savingProfile ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="themePanel glassCard">
+                    <div className="cardTitle">เลือกธีมของฉัน</div>
+
+                    <div className="themeList">
+                      {THEME_OPTIONS.map((theme) => (
+                        <button
+                          key={theme.key}
+                          className={profile.theme === theme.key ? "themeChoice active" : "themeChoice"}
+                          onClick={() => handleThemeChange(theme.key)}
+                          type="button"
+                        >
+                          <div className="themePreview">
+                            <div className={`themeMini ${theme.cssClass}`} />
                           </div>
-                          <div className="themeDesc">{theme.description}</div>
-                        </div>
-                      </button>
-                    ))}
+
+                          <div className="themeInfo">
+                            <div className="themeName">
+                              {theme.emoji} {theme.title}
+                            </div>
+                            <div className="themeDesc">{theme.description}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </section>
-          )}
-        </main>
-
-        <nav className="bottomNav glassCard">
-          <button
-            className={activeTab === "learn" ? "navItem active" : "navItem"}
-            onClick={() => setActiveTab("learn")}
-            type="button"
-          >
-            📘 เรียน
-          </button>
+              </section>
+            )}
+          </main>
 
           <button
-            className={activeTab === "score" ? "navItem active" : "navItem"}
-            onClick={() => setActiveTab("score")}
+            className={mobileMenuOpen ? "mobileMenuToggle open" : "mobileMenuToggle"}
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
             type="button"
+            aria-label="เปิดเมนู"
           >
-            🏆 คะแนน
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
           </button>
 
-          <button
-            className={activeTab === "shop" ? "navItem active" : "navItem"}
-            onClick={() => setActiveTab("shop")}
-            type="button"
-          >
-            🎁 ร้านค้า
-          </button>
+          <nav className={mobileMenuOpen ? "bottomNav glassCard mobileOpen" : "bottomNav glassCard"}>
+            <button className={activeTab === "learn" ? "navItem active" : "navItem"} onClick={() => changeTab("learn")} type="button">
+              📘 เรียน
+            </button>
 
-          <button
-            className={activeTab === "profile" ? "navItem active" : "navItem"}
-            onClick={() => setActiveTab("profile")}
-            type="button"
-          >
-            👤 โปรไฟล์
-          </button>
+            <button className={activeTab === "score" ? "navItem active" : "navItem"} onClick={() => changeTab("score")} type="button">
+              🏆 คะแนน
+            </button>
 
-          <button className="navItem logout" onClick={handleLogout} type="button">
-            🚪 ออก
-          </button>
-        </nav>
+            <button className={activeTab === "shop" ? "navItem active" : "navItem"} onClick={() => changeTab("shop")} type="button">
+              🎁 ร้านค้า
+            </button>
+
+            <button className={activeTab === "profile" ? "navItem active" : "navItem"} onClick={() => changeTab("profile")} type="button">
+              👤 โปรไฟล์
+            </button>
+
+            <button className="navItem logout" onClick={handleLogout} type="button">
+              🚪 ออก
+            </button>
+          </nav>
+        </div>
       </div>
     </div>
   );
