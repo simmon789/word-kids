@@ -1013,9 +1013,15 @@ function App() {
                       <p className="cardSub">แตะตัวอักษรจากถาด เพื่อวางในช่องคำตอบ</p>
                     </div>
 
-                    <button className="textActionBtn" onClick={handleResetLetters} type="button">
-                      ล้างตัวอักษร
-                    </button>
+                    <div className="headerActionGroup">
+                      <button className="textActionBtn" onClick={handleRemoveLastLetter} type="button">
+                        ลบตัวท้าย
+                      </button>
+
+                      <button className="textActionBtn" onClick={handleResetLetters} type="button">
+                        ล้างตัวอักษร
+                      </button>
+                    </div>
                   </div>
 
                   <div className="answerSlots">
@@ -1193,7 +1199,7 @@ function App() {
                       <div key={reward.id} className="rewardCard glassCard">
                         <div className="rewardEmoji">{reward.emoji}</div>
                         <div className="rewardTitle">{reward.title}</div>
-                        <p className="rewardDesc">{reward.description}</p>
+                        <div className="rewardDesc">{reward.description}</div>
                         <div className="rewardCost">{reward.cost} คะแนน</div>
 
                         <button
