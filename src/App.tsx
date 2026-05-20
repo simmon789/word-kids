@@ -741,6 +741,9 @@ function App() {
     );
   }
 
+  const currentUser = user;
+  const currentProfile = profile;
+
   function renderLearnPage() {
     return (
       <>
@@ -920,15 +923,15 @@ function App() {
         <h2>คะแนนของฉัน</h2>
 
         <div className="scoreCards">
-          <div className="bigScoreCard">⭐ {profile.coins || 0} คะแนน</div>
-          <div className="bigScoreCard">✅ ถูกทั้งหมด {profile.totalCorrect || 0} คำ</div>
+          <div className="bigScoreCard">⭐ {currentProfile.coins || 0} คะแนน</div>
+          <div className="bigScoreCard">✅ ถูกทั้งหมด {currentProfile.totalCorrect || 0} คำ</div>
           <div className="bigScoreCard">🎁 รางวัล {myRewards.length} ชิ้น</div>
         </div>
 
         <h3 className="sectionTitle">อันดับเพื่อน</h3>
         <div className="leaderboard">
           {leaderboard.map((item, index) => (
-            <div key={item.uid} className={item.uid === user.uid ? "me" : ""}>
+            <div key={item.uid} className={item.uid === currentUser.uid ? "me" : ""}>
               {index + 1}. {item.avatar} {item.name} — {item.coins} คะแนน
             </div>
           ))}
@@ -954,7 +957,7 @@ function App() {
     return (
       <div className="simplePage">
         <h2>ร้านของรางวัล</h2>
-        <p className="shopIntro">คะแนนของฉัน: {profile.coins || 0} คะแนน</p>
+        <p className="shopIntro">คะแนนของฉัน: {currentProfile.coins || 0} คะแนน</p>
 
         <div className="shopGrid">
           {SHOP_ITEMS.map((item) => (
@@ -1034,7 +1037,7 @@ function App() {
   }
 
   return (
-    <div className={`pageBg theme-${profile.theme || "blue"}`}>
+    <div className={`pageBg theme-${currentProfile.theme || "blue"}`}>
       <div className="browserFrame">
         <div className="browserTop">
           <div className="browserDots">
@@ -1050,8 +1053,8 @@ function App() {
             <div className="brand">Word Star Kids</div>
 
             <div className="topRight">
-              <div className="coinPill">⭐ {profile.coins || 0} คะแนน</div>
-              <div className="avatarMini">{profile.avatar || "🧒"}</div>
+              <div className="coinPill">⭐ {currentProfile.coins || 0} คะแนน</div>
+              <div className="avatarMini">{currentProfile.avatar || "🧒"}</div>
             </div>
           </header>
 
