@@ -24,7 +24,19 @@ input {
 button {
   cursor: pointer;
   border: none;
-  transition: 0.22s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 button:disabled {
@@ -39,11 +51,17 @@ input {
   font-size: 16px;
   outline: none;
   background: rgba(255, 255, 255, 0.94);
+  color: #17345e;
 }
 
 input:focus {
   border-color: #67a3ff;
   box-shadow: 0 0 0 4px rgba(103, 163, 255, 0.12);
+}
+
+input:disabled {
+  color: #6c7e9e;
+  background: rgba(238, 244, 252, 0.9);
 }
 
 /* =========================
@@ -58,8 +76,8 @@ input:focus {
   justify-content: center;
   padding: 24px;
   background:
-    radial-gradient(circle at top left, #d9efff 0, #d9efff 18%, transparent 18%),
-    radial-gradient(circle at bottom right, #ffe3ef 0, #ffe3ef 18%, transparent 18%),
+    radial-gradient(circle at 10% 8%, #d9efff 0, #d9efff 18%, transparent 19%),
+    radial-gradient(circle at 92% 88%, #ffe3ef 0, #ffe3ef 18%, transparent 19%),
     linear-gradient(180deg, #eef7ff 0%, #fdfdff 100%);
 }
 
@@ -117,6 +135,7 @@ input:focus {
 .authSwitchBtn.active {
   background: linear-gradient(180deg, #58abff, #2e7ae8);
   color: white;
+  box-shadow: 0 10px 22px rgba(48, 126, 232, 0.22);
 }
 
 .authCard label {
@@ -163,41 +182,118 @@ input:focus {
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
-  padding: 18px;
-  background-size: max(1320px, 112vw) auto;
-  background-position: top center;
+  padding: 22px;
+  background-size: cover;
+  background-position: center top;
   background-repeat: no-repeat;
   background-attachment: fixed;
+}
+
+.themeBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: inherit;
+  background-size: max(1320px, 116vw) auto;
+  background-position: center top;
+  background-repeat: no-repeat;
+  filter: saturate(1.08) contrast(1.03);
+  transform: scale(1.06);
 }
 
 .appOverlay {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: 1;
   pointer-events: none;
   background:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.24)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.32));
+    linear-gradient(90deg, rgba(238, 248, 255, 0.72), rgba(255, 255, 255, 0.1), rgba(238, 248, 255, 0.72)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.18));
+}
+
+.browserFrame {
+  width: min(100%, 1180px);
+  margin: 0 auto;
+  position: relative;
+  z-index: 3;
+  border-radius: 34px;
+  overflow: hidden;
+  background: rgba(231, 246, 255, 0.38);
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 30px 80px rgba(29, 75, 140, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.browserTop {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 18px;
+  background: rgba(238, 248, 255, 0.78);
+  border-bottom: 1px solid rgba(139, 192, 255, 0.28);
+}
+
+.browserDots {
+  display: flex;
+  gap: 8px;
+}
+
+.browserDots span {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: block;
+}
+
+.browserDots span:nth-child(1) {
+  background: #ff6b6b;
+}
+
+.browserDots span:nth-child(2) {
+  background: #ffc94a;
+}
+
+.browserDots span:nth-child(3) {
+  background: #39d98a;
+}
+
+.browserUrl {
+  flex: 1;
+  max-width: 360px;
+  margin: 0 auto;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(108, 171, 255, 0.25);
+  color: #4d79ad;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
 }
 
 .appContainer {
-  width: min(100%, 1060px);
+  width: min(100%, 1040px);
   margin: 0 auto;
+  padding: 22px;
   position: relative;
-  z-index: 2;
+  z-index: 4;
 }
 
 .glassCard,
 .screenCard,
 .topBar,
 .bottomNav {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   border: 2px solid rgba(255, 255, 255, 0.78);
   box-shadow:
-    0 18px 45px rgba(42, 72, 120, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+    0 18px 45px rgba(42, 72, 120, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
 /* =========================
@@ -205,19 +301,20 @@ input:focus {
 ========================= */
 
 .topBar {
-  border-radius: 28px;
+  border-radius: 26px;
   padding: 18px 22px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: 18px;
   margin-bottom: 18px;
 }
 
 .brandTitle {
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 900;
   color: #2262db;
+  letter-spacing: -0.4px;
   text-shadow: 0 2px 0 rgba(255, 255, 255, 0.72);
 }
 
@@ -225,6 +322,7 @@ input:focus {
   margin-top: 4px;
   color: #55729e;
   font-weight: 800;
+  font-size: 14px;
 }
 
 .topBarRight {
@@ -235,12 +333,17 @@ input:focus {
 
 .coinBadge,
 .rankBadge {
-  padding: 12px 16px;
+  min-height: 48px;
+  padding: 10px 16px;
   border-radius: 999px;
   background: linear-gradient(180deg, #fff7c8, #ffe48f);
   color: #7f5900;
   font-weight: 900;
   border: 2px solid rgba(224, 186, 63, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
 }
 
 .rankBadge {
@@ -250,8 +353,8 @@ input:focus {
 }
 
 .avatarBadge {
-  width: 56px;
-  height: 56px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
   background: white;
   border: 3px solid rgba(96, 155, 245, 0.3);
@@ -259,7 +362,7 @@ input:focus {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  font-size: 30px;
+  font-size: 29px;
 }
 
 /* =========================
@@ -271,14 +374,14 @@ input:focus {
 }
 
 .screenCard {
-  border-radius: 32px;
+  border-radius: 30px;
   padding: 22px;
   position: relative;
   overflow: hidden;
 }
 
 .lessonScreen {
-  padding: 18px;
+  padding: 24px;
 }
 
 .sectionTitle {
@@ -286,8 +389,9 @@ input:focus {
   font-size: 34px;
   font-weight: 900;
   color: #2353c4;
-  margin-bottom: 14px;
-  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.85);
+  margin: 4px 0 14px;
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.88);
+  letter-spacing: -0.5px;
 }
 
 .languageTabs {
@@ -295,26 +399,28 @@ input:focus {
   gap: 12px;
   justify-content: center;
   flex-wrap: wrap;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .langBtn {
+  min-width: 112px;
   padding: 12px 18px;
-  border-radius: 14px;
+  border-radius: 15px;
   font-weight: 900;
   color: #245fbf;
-  background: #e6effc;
+  background: rgba(230, 239, 252, 0.94);
   font-size: 16px;
-  box-shadow: 0 8px 18px rgba(45, 126, 234, 0.08);
+  box-shadow: 0 10px 22px rgba(45, 126, 234, 0.09);
 }
 
 .langBtn.active {
   color: white;
   background: linear-gradient(180deg, #56a7ff, #2d7be8);
-  box-shadow: 0 12px 24px rgba(54, 123, 232, 0.22);
+  box-shadow: 0 12px 24px rgba(54, 123, 232, 0.24);
 }
 
 .langBtn.answer {
+  min-width: 120px;
   background: linear-gradient(180deg, #fff3c7, #f4df99);
   color: #8e6600;
 }
@@ -324,151 +430,177 @@ input:focus {
 }
 
 /* =========================
-   START CARD
+   START LESSON
 ========================= */
 
-.startCard {
+.startLessonBox {
   width: min(100%, 520px);
   margin: 0 auto 18px;
-  padding: 20px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.82);
-  border: 2px solid rgba(155, 197, 255, 0.42);
+  padding: 18px 20px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 2px solid rgba(155, 197, 255, 0.38);
   text-align: center;
-  box-shadow: 0 12px 32px rgba(47, 124, 232, 0.1);
+  box-shadow: 0 14px 34px rgba(47, 124, 232, 0.11);
 }
 
-.startBtn {
-  min-width: 160px;
-  min-height: 56px;
+.startLessonBtn {
+  min-width: 178px;
+  min-height: 58px;
   padding: 0 24px;
   border-radius: 18px;
   color: white;
   font-size: 20px;
   font-weight: 900;
   background: linear-gradient(180deg, #65b9ff, #2b80ec);
-  box-shadow: 0 14px 26px rgba(43, 128, 236, 0.24);
+  box-shadow: 0 14px 26px rgba(43, 128, 236, 0.26);
 }
 
-.startCard p {
+.startLessonBox p {
   margin: 12px 0 0;
   color: #53719e;
   font-weight: 800;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 /* =========================
-   HERO PROMPT
+   SOUND HERO
 ========================= */
 
-.heroPrompt {
-  border-radius: 24px;
+.soundHero {
+  border-radius: 26px;
   padding: 18px;
   margin-bottom: 18px;
   display: grid;
-  grid-template-columns: 94px 1fr 160px;
+  grid-template-columns: 94px 1fr 170px;
   gap: 18px;
   align-items: center;
-  background: rgba(244, 250, 255, 0.92);
+  background: rgba(241, 250, 255, 0.86);
 }
 
-.heroPromptIcon {
+.soundIcon {
+  width: 82px;
   height: 82px;
-  border-radius: 20px;
-  background: linear-gradient(180deg, #75c5ff, #2f8cf1);
+  border-radius: 22px;
+  background: linear-gradient(180deg, #78c8ff, #2f8cf1);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 42px;
+  font-size: 44px;
   box-shadow:
-    0 12px 24px rgba(47, 140, 241, 0.18),
+    0 14px 28px rgba(47, 140, 241, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
-.heroPromptCenter {
-  text-align: left;
-}
-
-.bigQuestion {
-  font-size: 42px;
-  line-height: 1;
+.soundText h3 {
+  margin: 0 0 6px;
+  font-size: 22px;
   font-weight: 900;
-  color: #2d67e3;
-  min-height: 48px;
-  display: flex;
-  align-items: center;
+  color: #2752b9;
 }
 
-.heroPromptText {
-  margin-top: 8px;
+.soundText p {
+  margin: 0;
   color: #35588f;
-  font-size: 17px;
-  font-weight: 900;
+  font-size: 15px;
+  line-height: 1.55;
+  font-weight: 800;
 }
 
-.wordMeaning {
+.hiddenWordPill {
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
-  margin-top: 8px;
-  padding: 7px 12px;
+  gap: 10px;
+  min-height: 32px;
+  margin-top: 10px;
+  padding: 8px 14px;
   border-radius: 999px;
-  background: #fff0b9;
-  color: #8b5e00;
+  background: linear-gradient(180deg, #fff4c7, #ffe39a);
+  color: #865d00;
   font-weight: 900;
+  box-shadow: 0 8px 16px rgba(180, 129, 24, 0.09);
+}
+
+.hiddenWordPill strong {
+  font-size: 19px;
+  color: #244d9f;
+}
+
+.hiddenWordPill span {
+  font-size: 14px;
+  color: #8a6600;
 }
 
 .speakButton {
   border-radius: 20px;
-  min-height: 82px;
-  padding: 16px;
+  min-height: 76px;
+  padding: 14px 16px;
   color: white;
-  font-size: 21px;
+  font-size: 20px;
   font-weight: 900;
   background: linear-gradient(180deg, #60b5ff, #2882eb);
   box-shadow: 0 16px 28px rgba(40, 130, 235, 0.24);
 }
 
 /* =========================
-   LESSON LAYOUT
+   PRACTICE CARD
 ========================= */
-
-.lessonGrid {
-  display: grid;
-  grid-template-columns: 1.45fr 0.75fr;
-  gap: 18px;
-}
-
-.leftColumn,
-.rightColumn {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
 
 .practiceCard,
 .infoCard,
 .leaderboardCard,
 .profileMain,
 .themePanel,
-.shopNote {
-  border-radius: 24px;
-  padding: 16px;
+.shopNote,
+.checkPanel {
+  border-radius: 26px;
+  padding: 18px;
+}
+
+.practiceCard {
+  margin-bottom: 18px;
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.cardHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .cardTitle {
   font-size: 22px;
   font-weight: 900;
   color: #2752b9;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
-.practiceCard .cardTitle {
-  margin-bottom: 5px;
+.cardSub {
+  margin: 0;
+  color: #55729e;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.45;
 }
 
-.practiceCard .cardTitle + p {
-  margin-top: 0;
+.headerActionGroup {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.textActionBtn {
+  border-radius: 14px;
+  padding: 10px 14px;
+  color: #245fbf;
+  background: rgba(236, 245, 255, 0.95);
+  font-weight: 900;
+  box-shadow: 0 8px 18px rgba(45, 126, 234, 0.08);
 }
 
 .answerSlots {
@@ -494,14 +626,24 @@ input:focus {
   color: #183e85;
 }
 
+.letterTrayBox {
+  border-radius: 22px;
+  padding: 14px;
+  background: rgba(236, 248, 255, 0.86);
+  border: 2px solid rgba(176, 216, 255, 0.72);
+}
+
+.letterTrayTitle {
+  margin-bottom: 10px;
+  color: #35588f;
+  font-size: 14px;
+  font-weight: 900;
+}
+
 .letterTray {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  padding: 16px;
-  border-radius: 20px;
-  background: rgba(234, 247, 255, 0.88);
-  border: 2px solid rgba(176, 216, 255, 0.64);
 }
 
 .letterButton {
@@ -517,30 +659,10 @@ input:focus {
   box-shadow: 0 8px 15px rgba(180, 129, 24, 0.12);
 }
 
-.letterButton:hover {
-  transform: translateY(-2px);
-}
-
 .letterButton.used {
-  opacity: 0.32;
+  opacity: 0.34;
   cursor: not-allowed;
   transform: none;
-}
-
-.miniControls {
-  display: flex;
-  gap: 12px;
-  margin-top: 14px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.miniBtn {
-  border-radius: 16px;
-  padding: 11px 15px;
-  background: #e7f0fc;
-  color: #2753b8;
-  font-weight: 900;
 }
 
 /* =========================
@@ -555,7 +677,9 @@ input:focus {
   overflow: hidden;
   background: #fffefc;
   border: 3px solid #73adff;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.8),
+    0 12px 26px rgba(45, 126, 234, 0.08);
 }
 
 .writingLines {
@@ -581,53 +705,32 @@ input:focus {
   cursor: crosshair;
 }
 
-.clearCanvasBtn {
+.pencilIcon {
   position: absolute;
-  right: 14px;
-  bottom: 14px;
-  border-radius: 14px;
-  padding: 10px 14px;
-  background: linear-gradient(180deg, #ffb38a, #ff8d5f);
-  color: white;
-  font-weight: 900;
-  box-shadow: 0 10px 18px rgba(255, 141, 95, 0.24);
-}
-
-.actionRow {
-  display: grid;
-  grid-template-columns: 1fr 1.1fr 1fr;
-  gap: 14px;
-  margin-top: 16px;
-}
-
-.navBtn,
-.checkBtn {
-  min-height: 58px;
-  border-radius: 18px;
-  font-size: 19px;
-  font-weight: 900;
-}
-
-.navBtn {
-  background: #e6eef9;
-  color: #2b63c3;
-}
-
-.checkBtn {
-  background: linear-gradient(180deg, #62dd96, #2bc468);
-  color: white;
-  box-shadow: 0 14px 24px rgba(43, 196, 104, 0.24);
+  right: 16px;
+  bottom: 12px;
+  font-size: 32px;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.12));
 }
 
 /* =========================
-   RESULT / STATUS
+   CHECK AREA
 ========================= */
 
+.bottomPracticeGrid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 18px;
+  align-items: stretch;
+  margin-top: 18px;
+}
+
 .resultCard {
-  border-radius: 24px;
+  border-radius: 26px;
   padding: 22px;
-  min-height: 210px;
-  background: linear-gradient(180deg, #eef6ff, #e4f1ff);
+  min-height: 190px;
+  background: linear-gradient(180deg, rgba(238, 246, 255, 0.92), rgba(228, 241, 255, 0.92));
   border: 2px solid rgba(115, 172, 255, 0.45);
   color: #2852a0;
 }
@@ -661,19 +764,63 @@ input:focus {
   font-weight: 800;
 }
 
-.infoLine {
-  margin-bottom: 10px;
-  font-size: 17px;
-  font-weight: 800;
-  color: #35588f;
+.checkPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.86);
 }
 
-.tipsList {
-  margin: 0;
-  padding-left: 22px;
-  color: #35588f;
-  font-weight: 700;
-  line-height: 1.8;
+.miniStatus {
+  min-height: 42px;
+  border-radius: 14px;
+  padding: 8px 12px;
+  background: rgba(246, 250, 255, 0.9);
+  border: 1px solid rgba(188, 215, 255, 0.62);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.miniStatus span {
+  color: #506d9b;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.miniStatus strong {
+  color: #245fbf;
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.checkBtn {
+  width: 100%;
+  min-height: 56px;
+  border-radius: 18px;
+  font-size: 20px;
+  font-weight: 900;
+  background: linear-gradient(180deg, #62dd96, #2bc468);
+  color: white;
+  box-shadow: 0 14px 24px rgba(43, 196, 104, 0.24);
+}
+
+.wordNavRow {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.smallNavBtn {
+  min-width: 150px;
+  min-height: 48px;
+  border-radius: 16px;
+  background: rgba(235, 244, 255, 0.92);
+  color: #245fbf;
+  font-weight: 900;
+  box-shadow: 0 8px 18px rgba(45, 126, 234, 0.08);
 }
 
 /* =========================
@@ -804,10 +951,19 @@ input:focus {
 }
 
 .rewardTitle {
-  font-size: 24px;
+  font-size: 23px;
   font-weight: 900;
   color: #2852b5;
-  min-height: 64px;
+  min-height: 54px;
+}
+
+.rewardDesc {
+  min-height: 44px;
+  color: #607aa8;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.55;
+  margin-top: 6px;
 }
 
 .rewardCost {
@@ -994,9 +1150,9 @@ input:focus {
 .bottomNav {
   position: fixed;
   left: 50%;
-  bottom: 16px;
+  bottom: 22px;
   transform: translateX(-50%);
-  width: min(1060px, calc(100% - 24px));
+  width: min(1040px, calc(100% - 44px));
   border-radius: 26px;
   padding: 10px;
   display: grid;
@@ -1017,6 +1173,7 @@ input:focus {
 .navItem.active {
   background: linear-gradient(180deg, #58abff, #2f7ce8);
   color: white;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.14);
 }
 
 .navItem.logout {
@@ -1030,19 +1187,19 @@ input:focus {
 
 .theme-yellow-bunny {
   background-image:
-    linear-gradient(rgba(255, 246, 211, 0.03), rgba(255, 252, 242, 0.2)),
+    linear-gradient(rgba(255, 246, 211, 0.02), rgba(255, 252, 242, 0.12)),
     url("/themes/theme-yellow-bunny.png");
 }
 
 .theme-red-blockman {
   background-image:
-    linear-gradient(rgba(255, 232, 218, 0.02), rgba(255, 248, 238, 0.2)),
+    linear-gradient(rgba(255, 232, 218, 0.02), rgba(255, 248, 238, 0.12)),
     url("/themes/theme-red-blockman.png");
 }
 
 .theme-blue-sponge {
   background-image:
-    linear-gradient(rgba(213, 244, 255, 0.02), rgba(235, 250, 255, 0.2)),
+    linear-gradient(rgba(213, 244, 255, 0.02), rgba(235, 250, 255, 0.12)),
     url("/themes/theme-blue-sponge.png");
 }
 
@@ -1088,15 +1245,15 @@ input:focus {
   background: linear-gradient(180deg, #5fc7ff, #0b8ce3);
 }
 
-.theme-yellow-bunny .heroPromptIcon {
+.theme-yellow-bunny .soundIcon {
   background: linear-gradient(180deg, #ffe176, #f2aa20);
 }
 
-.theme-red-blockman .heroPromptIcon {
+.theme-red-blockman .soundIcon {
   background: linear-gradient(180deg, #ff905b, #e34f2f);
 }
 
-.theme-blue-sponge .heroPromptIcon {
+.theme-blue-sponge .soundIcon {
   background: linear-gradient(180deg, #62d1ff, #0a91e6);
 }
 
@@ -1203,20 +1360,24 @@ input:focus {
 ========================= */
 
 @media (max-width: 1100px) {
-  .appContainer {
+  .browserFrame {
     width: min(100%, 980px);
   }
 
-  .heroPrompt {
-    grid-template-columns: 92px 1fr;
+  .appContainer {
+    width: 100%;
+  }
+
+  .soundHero {
+    grid-template-columns: 84px 1fr;
   }
 
   .speakButton {
     grid-column: 1 / -1;
-    min-height: 64px;
+    min-height: 62px;
   }
 
-  .lessonGrid,
+  .bottomPracticeGrid,
   .profileGrid,
   .shopGrid {
     grid-template-columns: 1fr;
@@ -1229,22 +1390,45 @@ input:focus {
 
 @media (max-width: 780px) {
   .appShell {
-    padding: 12px;
+    padding: 10px;
     background-attachment: scroll;
+  }
+
+  .themeBackdrop {
     background-size: auto 100vh;
     background-position: top center;
+    transform: scale(1.08);
   }
 
   .appOverlay {
     background:
-      radial-gradient(circle at center, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.28)),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.36));
+      linear-gradient(90deg, rgba(238, 248, 255, 0.38), rgba(255, 255, 255, 0.08), rgba(238, 248, 255, 0.38)),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.1));
+  }
+
+  .browserFrame {
+    border-radius: 24px;
+  }
+
+  .browserTop {
+    height: 34px;
+    padding: 0 12px;
+  }
+
+  .browserUrl {
+    font-size: 10px;
+    max-width: 230px;
+  }
+
+  .appContainer {
+    padding: 12px;
   }
 
   .topBar {
     flex-direction: column;
     align-items: stretch;
-    border-radius: 24px;
+    border-radius: 22px;
+    padding: 14px;
   }
 
   .topBarRight {
@@ -1252,12 +1436,17 @@ input:focus {
   }
 
   .screenCard {
-    border-radius: 26px;
+    border-radius: 24px;
+    padding: 15px;
+  }
+
+  .lessonScreen {
     padding: 16px;
   }
 
   .sectionTitle {
     font-size: 27px;
+    line-height: 1.25;
   }
 
   .languageTabs {
@@ -1265,30 +1454,53 @@ input:focus {
   }
 
   .langBtn {
-    padding: 11px 14px;
-    font-size: 15px;
+    min-width: auto;
+    padding: 10px 13px;
+    font-size: 14px;
   }
 
-  .heroPrompt {
+  .startLessonBox {
+    padding: 14px;
+  }
+
+  .soundHero {
     grid-template-columns: 1fr;
     text-align: center;
     padding: 16px;
   }
 
-  .heroPromptCenter {
-    text-align: center;
+  .soundIcon {
+    margin: 0 auto;
   }
 
-  .heroPromptIcon {
-    height: 82px;
+  .soundText h3 {
+    font-size: 21px;
   }
 
-  .bigQuestion {
+  .hiddenWordPill {
     justify-content: center;
-    font-size: 56px;
   }
 
-  .actionRow,
+  .cardHeaderRow {
+    flex-direction: column;
+  }
+
+  .headerActionGroup {
+    justify-content: flex-start;
+  }
+
+  .writingPad {
+    height: 260px;
+  }
+
+  .wordNavRow {
+    flex-direction: column;
+  }
+
+  .smallNavBtn {
+    width: 100%;
+  }
+
   .scoreTopRow {
     grid-template-columns: 1fr;
   }
@@ -1301,10 +1513,6 @@ input:focus {
     flex-direction: column;
     align-items: flex-start;
   }
-
-  .writingPad {
-    height: 260px;
-  }
 }
 
 @media (max-width: 520px) {
@@ -1313,35 +1521,36 @@ input:focus {
   }
 
   .brandTitle {
-    font-size: 24px;
+    font-size: 23px;
   }
 
   .brandSub {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .coinBadge,
   .rankBadge {
-    padding: 10px 12px;
-    font-size: 14px;
+    padding: 9px 11px;
+    font-size: 13px;
+    min-height: 44px;
   }
 
   .avatarBadge {
-    width: 48px;
-    height: 48px;
-    font-size: 25px;
-  }
-
-  .answerSlot {
     width: 46px;
-    height: 52px;
+    height: 46px;
     font-size: 24px;
   }
 
+  .answerSlot {
+    width: 45px;
+    height: 50px;
+    font-size: 23px;
+  }
+
   .letterButton {
-    min-width: 50px;
-    min-height: 50px;
-    font-size: 22px;
+    min-width: 48px;
+    min-height: 48px;
+    font-size: 21px;
   }
 
   .resultTitle {
@@ -1349,7 +1558,7 @@ input:focus {
   }
 
   .resultText {
-    font-size: 18px;
+    font-size: 17px;
   }
 
   .themeChoice {
