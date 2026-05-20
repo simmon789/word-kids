@@ -1,1195 +1,1155 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import SignatureCanvas from "react-signature-canvas";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import './App.css';
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
   type User,
-} from "firebase/auth";
+} from 'firebase/auth';
 import {
-  addDoc,
   collection,
   doc,
   getDoc,
-  increment,
   limit,
   onSnapshot,
   orderBy,
   query,
-  runTransaction,
   serverTimestamp,
   setDoc,
-  updateDoc,
-} from "firebase/firestore";
-import { auth, db } from "./firebase";
-import "./App.css";
+} from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { auth, db, storage } from './firebase';
 
-type LanguageType = "en" | "th";
-type TabType = "learn" | "score" | "shop" | "profile";
-type ResultType = "idle" | "success" | "error";
+type ThemeKey = 'minecraft' | 'pinkRabbit' | 'snowPrincess' | 'spongeSea';
+type LangKey = 'en' | 'th';
+type TabKey = 'learn' | 'score' | 'shop' | 'profile';
+type AuthMode = 'login' | 'register';
 
-type WordItem = {
-  word: string;
-  meaning: string;
-};
-
-type LetterTile = {
+interface WordItem {
   id: string;
-  value: string;
-};
+  text: string;
+  lang: LangKey;
+}
 
-type UserProfile = {
-  uid: string;
+interface UserProfile {
+  name: string;
+  className: string;
+  coins: number;
+  theme: ThemeKey;
+  avatarUrl: string;
+  completedWords: string[];
+  claimedRewardIds: string[];
   email: string;
-  name: string;
-  className: string;
-  avatar: string;
-  theme: string;
-  coins: number;
-  totalCorrect: number;
-};
+}
 
-type LeaderboardItem = {
+interface PublicProfile {
   uid: string;
   name: string;
   className: string;
-  avatar: string;
   coins: number;
-  totalCorrect: number;
-};
-
-type RewardItem = {
-  id: string;
-  name: string;
-  price: number;
-  icon: string;
-};
-
-type MyReward = {
-  rewardId: string;
-  name: string;
-  price: number;
-  icon: string;
-};
-
-type PracticeHistory = {
-  word: string;
-  language: LanguageType;
-  earnedCoin: number;
-};
+  theme: ThemeKey;
+  avatarUrl: string;
+}
 
 const ENGLISH_WORDS: WordItem[] = [
-  { word: "hello", meaning: "สวัสดี" },
-  { word: "name", meaning: "ชื่อ" },
-  { word: "my", meaning: "ของฉัน" },
-  { word: "your", meaning: "ของคุณ" },
-  { word: "pencil", meaning: "ดินสอ" },
-  { word: "pen", meaning: "ปากกา" },
-  { word: "bag", meaning: "กระเป๋า" },
-  { word: "book", meaning: "หนังสือ" },
-  { word: "desk", meaning: "โต๊ะเรียน" },
-  { word: "chair", meaning: "เก้าอี้" },
-  { word: "ruler", meaning: "ไม้บรรทัด" },
-  { word: "eraser", meaning: "ยางลบ" },
-  { word: "map", meaning: "แผนที่" },
-  { word: "marker", meaning: "ปากกาเมจิก" },
-  { word: "globe", meaning: "ลูกโลก" },
+  { id: 'en-1', text: 'hello', lang: 'en' },
+  { id: 'en-2', text: 'name', lang: 'en' },
+  { id: 'en-3', text: 'my', lang: 'en' },
+  { id: 'en-4', text: 'your', lang: 'en' },
+  { id: 'en-5', text: 'pencil', lang: 'en' },
+  { id: 'en-6', text: 'pen', lang: 'en' },
+  { id: 'en-7', text: 'bag', lang: 'en' },
+  { id: 'en-8', text: 'book', lang: 'en' },
+  { id: 'en-9', text: 'desk', lang: 'en' },
+  { id: 'en-10', text: 'chair', lang: 'en' },
+  { id: 'en-11', text: 'ruler', lang: 'en' },
+  { id: 'en-12', text: 'eraser', lang: 'en' },
+  { id: 'en-13', text: 'map', lang: 'en' },
+  { id: 'en-14', text: 'marker', lang: 'en' },
+  { id: 'en-15', text: 'globe', lang: 'en' },
 ];
 
 const THAI_WORDS: WordItem[] = [
-  { word: "กา", meaning: "กา" },
-  { word: "กิน", meaning: "กิน" },
-  { word: "ไก่", meaning: "ไก่" },
-  { word: "เก้า", meaning: "เก้า" },
-  { word: "เก็บ", meaning: "เก็บ" },
-  { word: "เก่ง", meaning: "เก่ง" },
-  { word: "ขา", meaning: "ขา" },
-  { word: "ของ", meaning: "ของ" },
-  { word: "เข่า", meaning: "เข่า" },
-  { word: "ข้าง", meaning: "ข้าง" },
-  { word: "เขี่ย", meaning: "เขี่ย" },
-  { word: "ขวา", meaning: "ขวา" },
-  { word: "คำ", meaning: "คำ" },
-  { word: "คน", meaning: "คน" },
-  { word: "คืน", meaning: "คืน" },
-  { word: "ครู", meaning: "ครู" },
-  { word: "คุย", meaning: "คุย" },
-  { word: "คิด", meaning: "คิด" },
-  { word: "งา", meaning: "งา" },
-  { word: "งวง", meaning: "งวง" },
+  { id: 'th-1', text: 'กา', lang: 'th' },
+  { id: 'th-2', text: 'กิน', lang: 'th' },
+  { id: 'th-3', text: 'ไก่', lang: 'th' },
+  { id: 'th-4', text: 'เก้า', lang: 'th' },
+  { id: 'th-5', text: 'เก็บ', lang: 'th' },
+  { id: 'th-6', text: 'เก่ง', lang: 'th' },
+  { id: 'th-7', text: 'ขา', lang: 'th' },
+  { id: 'th-8', text: 'ของ', lang: 'th' },
+  { id: 'th-9', text: 'เข่า', lang: 'th' },
+  { id: 'th-10', text: 'ข้าง', lang: 'th' },
+  { id: 'th-11', text: 'เขี่ย', lang: 'th' },
+  { id: 'th-12', text: 'ขวา', lang: 'th' },
+  { id: 'th-13', text: 'คำ', lang: 'th' },
+  { id: 'th-14', text: 'คน', lang: 'th' },
+  { id: 'th-15', text: 'คืน', lang: 'th' },
+  { id: 'th-16', text: 'ครู', lang: 'th' },
+  { id: 'th-17', text: 'คุย', lang: 'th' },
+  { id: 'th-18', text: 'คิด', lang: 'th' },
+  { id: 'th-19', text: 'งา', lang: 'th' },
+  { id: 'th-20', text: 'งวง', lang: 'th' },
 ];
 
-const ENGLISH_DISTRACTORS = [
-  "a",
-  "e",
-  "i",
-  "o",
-  "u",
-  "s",
-  "t",
-  "r",
-  "m",
-  "n",
-  "p",
-  "d",
-  "c",
-  "b",
-  "g",
-  "k",
-  "l",
-  "y",
-];
-
-const THAI_DISTRACTORS = [
-  "ก",
-  "ข",
-  "ค",
-  "ง",
-  "จ",
-  "า",
-  "ิ",
-  "ี",
-  "ุ",
-  "ู",
-  "เ",
-  "ไ",
-  "่",
-  "้",
-  "น",
-  "ม",
-  "ร",
-  "ล",
-  "ว",
-  "ย",
-];
-
-const SHOP_ITEMS: RewardItem[] = [
+const THEME_OPTIONS: {
+  key: ThemeKey;
+  title: string;
+  short: string;
+  emoji: string;
+  description: string;
+}[] = [
   {
-    id: "download-1-game",
-    name: "โหลด 1 เกมส์",
-    price: 100,
-    icon: "🎮",
+    key: 'minecraft',
+    title: 'ธีมสีเขียว Minecraft',
+    short: 'Minecraft',
+    emoji: '🟩',
+    description: 'โทนเขียวแบบบล็อก ๆ สดใส สนุกเหมือนโลกพิกเซล',
   },
   {
-    id: "suki-bonus",
-    name: "กินสุกี้ BONUS",
-    price: 200,
-    icon: "🍲",
+    key: 'pinkRabbit',
+    title: 'ธีมสีชมพู กระต่าย',
+    short: 'Rabbit',
+    emoji: '🐰',
+    description: 'หวานน่ารัก ฟรุ้งฟริ้ง ดูเหมือนแอพราคาสูง',
   },
   {
-    id: "toy-1-piece",
-    name: "ได้ของเล่น 1 ชิ้น",
-    price: 300,
-    icon: "🧸",
+    key: 'snowPrincess',
+    title: 'ธีมสีฟ้า เจ้าหญิงหิมะ',
+    short: 'Snow Princess',
+    emoji: '❄️',
+    description: 'ฟ้าสดใส หิมะเบา ๆ นุ่มนวล หรูหรา',
+  },
+  {
+    key: 'spongeSea',
+    title: 'ธีมสีเหลือง Sponge Bob',
+    short: 'Sponge Sea',
+    emoji: '⭐',
+    description: 'ทะเลสดใส สีเหลืองสนุกสนาน พร้อมบรรยากาศใต้น้ำ',
   },
 ];
 
-const AVATARS = ["🧒", "👦", "👧", "🐰", "🦊", "🐼", "⭐", "🚀"];
-const THEMES = ["blue", "pink", "green", "purple", "yellow"];
+const REWARD_ITEMS = [
+  { id: 'reward-100', title: 'โหลด 1 เกมส์', cost: 100, emoji: '🎮' },
+  { id: 'reward-200', title: 'กินสุกี้ BONUS', cost: 200, emoji: '🍲' },
+  { id: 'reward-300', title: 'ได้ของเล่น 1 ชิ้น', cost: 300, emoji: '🧸' },
+];
+
+const DEFAULT_PROFILE: UserProfile = {
+  name: '',
+  className: '',
+  coins: 0,
+  theme: 'snowPrincess',
+  avatarUrl: '',
+  completedWords: [],
+  claimedRewardIds: [],
+  email: '',
+};
+
+function normalizeWord(word: string, lang: LangKey) {
+  const clean = word.replace(/\s+/g, '');
+  return lang === 'en' ? clean.toLowerCase() : clean;
+}
+
+function splitChars(word: string) {
+  return Array.from(word);
+}
+
+function shuffleArray<T>(items: T[]) {
+  const arr = [...items];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function buildLetterBank(word: string, lang: LangKey) {
+  const answerChars = splitChars(normalizeWord(word, lang));
+  const enExtras = splitChars('abcdefghijklmnopqrstuvwxyz');
+  const thExtras = splitChars('กขฃคฆงจฉชซญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรลวศษสหฬอฮะาำิีึืุูเแโใไ่้๊๋์');
+  const extrasSource = lang === 'en' ? enExtras : thExtras;
+
+  const extras: string[] = [];
+  while (extras.length < Math.min(5, Math.max(3, answerChars.length))) {
+    const randomChar = extrasSource[Math.floor(Math.random() * extrasSource.length)];
+    if (!answerChars.includes(randomChar) && !extras.includes(randomChar)) {
+      extras.push(randomChar);
+    }
+  }
+
+  return shuffleArray([...answerChars, ...extras]);
+}
+
+function getWordKey(item: WordItem) {
+  return `${item.lang}:${item.id}:${normalizeWord(item.text, item.lang)}`;
+}
 
 function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [authLoading, setAuthLoading] = useState(true);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
-  const [activeTab, setActiveTab] = useState<TabType>("learn");
-  const [language, setLanguage] = useState<LanguageType>("en");
+  const [registerName, setRegisterName] = useState('');
+  const [registerClassName, setRegisterClassName] = useState('');
+  const [email, setEmail] = useState('pond01@wordstar.local');
+  const [password, setPassword] = useState('123456');
+  const [authError, setAuthError] = useState('');
+
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<TabKey>('learn');
+  const [language, setLanguage] = useState<LangKey>('en');
   const [wordIndex, setWordIndex] = useState(0);
 
-  const [hasStarted, setHasStarted] = useState(false);
+  const [letterBank, setLetterBank] = useState<string[]>([]);
+  const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
+  const [feedback, setFeedback] = useState('');
+  const [checkState, setCheckState] = useState<'idle' | 'success' | 'error'>('idle');
   const [showAnswer, setShowAnswer] = useState(false);
-  const [answerSlots, setAnswerSlots] = useState<Array<LetterTile | null>>([]);
-  const [letterTray, setLetterTray] = useState<LetterTile[]>([]);
-  const [message, setMessage] = useState(
-    "กดเริ่มเรียน แล้วฟังเสียง จากนั้นเรียงตัวอักษรและเขียนคำศัพท์"
-  );
-  const [resultType, setResultType] = useState<ResultType>("idle");
 
-  const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([]);
-  const [myRewards, setMyRewards] = useState<MyReward[]>([]);
-  const [history, setHistory] = useState<PracticeHistory[]>([]);
+  const [leaderboard, setLeaderboard] = useState<PublicProfile[]>([]);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
 
-  const [profileName, setProfileName] = useState("");
-  const [profileClass, setProfileClass] = useState("");
-  const [profileAvatar, setProfileAvatar] = useState("🧒");
-  const [profileTheme, setProfileTheme] = useState("blue");
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canvasWrapRef = useRef<HTMLDivElement | null>(null);
+  const isDrawingRef = useRef(false);
+  const hasDrawnRef = useRef(false);
 
-  const [writingTick, setWritingTick] = useState(0);
+  const currentWords = language === 'en' ? ENGLISH_WORDS : THAI_WORDS;
 
-  const writingPadRef = useRef<SignatureCanvas | null>(null);
-  const writingBoxRef = useRef<HTMLDivElement | null>(null);
+  const currentWord = useMemo(() => {
+    if (wordIndex > currentWords.length - 1) {
+      return currentWords[0];
+    }
+    return currentWords[wordIndex];
+  }, [currentWords, wordIndex]);
 
-  const currentList = language === "en" ? ENGLISH_WORDS : THAI_WORDS;
-  const currentWord = currentList[wordIndex];
-
-  const wordUnits = useMemo(() => {
-    return splitWord(currentWord.word, language);
-  }, [currentWord.word, language]);
-
-  const arrangedWord = answerSlots.map((slot) => slot?.value || "").join("");
-  const isArrangeComplete = answerSlots.every(Boolean);
-  const isArrangeCorrect = arrangedWord === currentWord.word;
-
-  const hasWritten = useMemo(() => {
-    return writingPadRef.current ? !writingPadRef.current.isEmpty() : false;
-  }, [writingTick, activeTab, wordIndex]);
+  const selectedText = selectedIndices.map((index) => letterBank[index]).join('');
+  const normalizedSelectedText = language === 'en' ? selectedText.toLowerCase() : selectedText;
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
       setAuthLoading(false);
 
-      if (currentUser) {
-        await ensureUserProfile(currentUser);
-      } else {
+      if (!firebaseUser) {
         setProfile(null);
+        return;
+      }
+
+      setProfileLoading(true);
+      try {
+        const userRef = doc(db, 'users', firebaseUser.uid);
+        const snap = await getDoc(userRef);
+
+        if (snap.exists()) {
+          const data = snap.data() as Partial<UserProfile>;
+          const nextProfile: UserProfile = {
+            ...DEFAULT_PROFILE,
+            ...data,
+            email: data.email || firebaseUser.email || '',
+          };
+          setProfile(nextProfile);
+        } else {
+          const nextProfile: UserProfile = {
+            ...DEFAULT_PROFILE,
+            name: firebaseUser.email?.split('@')[0] || 'เด็กน้อย',
+            email: firebaseUser.email || '',
+          };
+          await setDoc(userRef, {
+            ...nextProfile,
+            updatedAt: serverTimestamp(),
+          });
+          await setDoc(
+            doc(db, 'publicProfiles', firebaseUser.uid),
+            {
+              uid: firebaseUser.uid,
+              name: nextProfile.name,
+              className: nextProfile.className,
+              coins: nextProfile.coins,
+              theme: nextProfile.theme,
+              avatarUrl: nextProfile.avatarUrl,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+          setProfile(nextProfile);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setProfileLoading(false);
       }
     });
 
-    return unsubscribe;
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!user) return;
-
-    const userRef = doc(db, "users", user.uid);
-
-    const unsubscribe = onSnapshot(userRef, (snapshot) => {
-      if (!snapshot.exists()) return;
-
-      const data = snapshot.data() as UserProfile;
-      setProfile(data);
-
-      setProfileName(data.name || "");
-      setProfileClass(data.className || "");
-      setProfileAvatar(data.avatar || "🧒");
-      setProfileTheme(data.theme || "blue");
-    });
-
-    return unsubscribe;
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const q = query(collection(db, "publicProfiles"), orderBy("coins", "desc"), limit(10));
-
+    const q = query(collection(db, 'publicProfiles'), orderBy('coins', 'desc'), limit(50));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const items = snapshot.docs.map((d) => d.data() as LeaderboardItem);
+      const items: PublicProfile[] = snapshot.docs.map((item) => {
+        const data = item.data() as Omit<PublicProfile, 'uid'>;
+        return {
+          uid: item.id,
+          name: data.name || 'เด็กน้อย',
+          className: data.className || '',
+          coins: data.coins || 0,
+          theme: data.theme || 'snowPrincess',
+          avatarUrl: data.avatarUrl || '',
+        };
+      });
       setLeaderboard(items);
     });
 
-    return unsubscribe;
-  }, [user]);
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
-    if (!user) return;
-
-    const rewardsRef = collection(db, "users", user.uid, "rewards");
-
-    const unsubscribe = onSnapshot(rewardsRef, (snapshot) => {
-      const items = snapshot.docs.map((d) => d.data() as MyReward);
-      setMyRewards(items);
-    });
-
-    return unsubscribe;
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const historyRef = query(
-      collection(db, "users", user.uid, "history"),
-      orderBy("createdAt", "desc"),
-      limit(8)
-    );
-
-    const unsubscribe = onSnapshot(historyRef, (snapshot) => {
-      const items = snapshot.docs.map((d) => d.data() as PracticeHistory);
-      setHistory(items);
-    });
-
-    return unsubscribe;
-  }, [user]);
-
-  useEffect(() => {
-    prepareNewQuestion();
-  }, [language, wordIndex]);
-
-  useEffect(() => {
-    if (activeTab !== "learn") return;
-
-    const resizeTimer = window.setTimeout(() => {
-      resizeWritingCanvas();
-    }, 150);
-
-    const wrapper = writingBoxRef.current;
-    let observer: ResizeObserver | null = null;
-
-    if (wrapper && "ResizeObserver" in window) {
-      observer = new ResizeObserver(() => {
-        resizeWritingCanvas();
-      });
-
-      observer.observe(wrapper);
+    if (wordIndex > currentWords.length - 1) {
+      setWordIndex(0);
     }
+  }, [currentWords, wordIndex]);
 
-    window.addEventListener("resize", resizeWritingCanvas);
+  useEffect(() => {
+    if (!currentWord) return;
+    setLetterBank(buildLetterBank(currentWord.text, currentWord.lang));
+    setSelectedIndices([]);
+    setFeedback('');
+    setCheckState('idle');
+    setShowAnswer(false);
+    clearCanvas();
+    setTimeout(() => {
+      speakWord(currentWord.text, currentWord.lang);
+    }, 300);
+  }, [currentWord]);
+
+  useEffect(() => {
+    const onResize = () => {
+      setupCanvas();
+    };
+
+    window.addEventListener('resize', onResize);
+    setTimeout(() => setupCanvas(), 100);
 
     return () => {
-      window.clearTimeout(resizeTimer);
-      window.removeEventListener("resize", resizeWritingCanvas);
-
-      if (observer) {
-        observer.disconnect();
-      }
+      window.removeEventListener('resize', onResize);
     };
-  }, [activeTab, language, wordIndex]);
+  }, [activeTab]);
 
-  useEffect(() => {
-    if (!hasStarted || activeTab !== "learn") return;
-
-    const timer = window.setTimeout(() => {
-      speakWord();
-    }, 450);
-
-    return () => window.clearTimeout(timer);
-  }, [wordIndex, language, hasStarted, activeTab]);
-
-  async function ensureUserProfile(currentUser: User) {
-    const userRef = doc(db, "users", currentUser.uid);
-    const publicRef = doc(db, "publicProfiles", currentUser.uid);
-    const snapshot = await getDoc(userRef);
-
-    if (!snapshot.exists()) {
-      const defaultName = currentUser.email?.split("@")[0] || "นักเรียน";
-
-      const data: UserProfile = {
+  async function upsertPublicProfile(nextProfile: UserProfile, currentUser: User) {
+    await setDoc(
+      doc(db, 'publicProfiles', currentUser.uid),
+      {
         uid: currentUser.uid,
-        email: currentUser.email || "",
-        name: defaultName,
-        className: "ป.1/1",
-        avatar: "🧒",
-        theme: "blue",
-        coins: 0,
-        totalCorrect: 0,
-      };
-
-      await setDoc(userRef, {
-        ...data,
-        createdAt: serverTimestamp(),
-      });
-
-      await setDoc(publicRef, {
-        uid: currentUser.uid,
-        name: data.name,
-        className: data.className,
-        avatar: data.avatar,
-        coins: data.coins,
-        totalCorrect: data.totalCorrect,
+        name: nextProfile.name,
+        className: nextProfile.className,
+        coins: nextProfile.coins,
+        theme: nextProfile.theme,
+        avatarUrl: nextProfile.avatarUrl,
         updatedAt: serverTimestamp(),
-      });
+      },
+      { merge: true }
+    );
+  }
+
+  async function saveProfilePatch(patch: Partial<UserProfile>) {
+    if (!user || !profile) return;
+
+    const nextProfile: UserProfile = {
+      ...profile,
+      ...patch,
+    };
+
+    setProfile(nextProfile);
+
+    await setDoc(
+      doc(db, 'users', user.uid),
+      {
+        ...patch,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    await upsertPublicProfile(nextProfile, user);
+  }
+
+  async function handleAuthSubmit() {
+    try {
+      setAuthError('');
+
+      if (authMode === 'login') {
+        await signInWithEmailAndPassword(auth, email.trim(), password);
+      } else {
+        const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
+
+        const newProfile: UserProfile = {
+          ...DEFAULT_PROFILE,
+          name: registerName.trim() || 'เด็กน้อย',
+          className: registerClassName.trim(),
+          email: email.trim(),
+        };
+
+        await setDoc(doc(db, 'users', cred.user.uid), {
+          ...newProfile,
+          updatedAt: serverTimestamp(),
+        });
+
+        await setDoc(
+          doc(db, 'publicProfiles', cred.user.uid),
+          {
+            uid: cred.user.uid,
+            name: newProfile.name,
+            className: newProfile.className,
+            coins: newProfile.coins,
+            theme: newProfile.theme,
+            avatarUrl: newProfile.avatarUrl,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+        setProfile(newProfile);
+      }
+    } catch (error: any) {
+      setAuthError(error?.message || 'เข้าสู่ระบบไม่สำเร็จ');
     }
   }
 
-  function splitWord(word: string, lang: LanguageType) {
-    if (lang === "en") {
-      return word.toLowerCase().split("");
-    }
+  function speakWord(text: string, lang: LangKey) {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const speech = new SpeechSynthesisUtterance(text);
+    speech.lang = lang === 'en' ? 'en-US' : 'th-TH';
+    speech.rate = lang === 'en' ? 0.85 : 0.9;
+    speech.pitch = 1;
+    window.speechSynthesis.speak(speech);
+  }
+
+  function setupCanvas() {
+    const canvas = canvasRef.current;
+    const wrap = canvasWrapRef.current;
+    if (!canvas || !wrap) return;
+
+    const rect = wrap.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+
+    canvas.width = rect.width * ratio;
+    canvas.height = rect.height * ratio;
+    canvas.style.width = `${rect.width}px`;
+    canvas.style.height = `${rect.height}px`;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(ratio, ratio);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#111827';
+    ctx.lineWidth = 6;
+  }
+
+  function clearCanvas() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hasDrawnRef.current = false;
+  }
+
+  function getPointerPosition(event: React.PointerEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+  }
+
+  function handlePointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const { x, y } = getPointerPosition(event);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    isDrawingRef.current = true;
+    hasDrawnRef.current = true;
 
     try {
-      const SegmenterClass = (Intl as any).Segmenter;
-      if (SegmenterClass) {
-        const segmenter = new SegmenterClass("th", { granularity: "grapheme" });
-        return Array.from(segmenter.segment(word), (x: any) => x.segment);
-      }
+      canvas.setPointerCapture(event.pointerId);
     } catch {
-      return Array.from(word);
+      // ignore
     }
-
-    return Array.from(word);
   }
 
-  function prepareNewQuestion() {
-    const units = splitWord(currentWord.word, language);
-    const tray = createTray(units, language);
+  function handlePointerMove(event: React.PointerEvent<HTMLCanvasElement>) {
+    if (!isDrawingRef.current) return;
 
-    setAnswerSlots(Array(units.length).fill(null));
-    setLetterTray(tray);
-    setShowAnswer(false);
-    setResultType("idle");
-    setWritingTick((prev) => prev + 1);
-    setMessage("ฟังเสียง แล้วเรียงตัวอักษรให้ถูก จากนั้นเขียนคำศัพท์ลงบนกระดาน");
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    window.setTimeout(() => {
-      writingPadRef.current?.clear();
-      resizeWritingCanvas();
-    }, 80);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const { x, y } = getPointerPosition(event);
+    ctx.lineTo(x, y);
+    ctx.stroke();
   }
 
-  function createTray(units: string[], lang: LanguageType) {
-    const distractors = lang === "en" ? ENGLISH_DISTRACTORS : THAI_DISTRACTORS;
-    const numberOfExtra = Math.min(4, Math.max(2, units.length));
-    const extraLetters: string[] = [];
+  function handlePointerUp(event: React.PointerEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    while (extraLetters.length < numberOfExtra) {
-      const random = distractors[Math.floor(Math.random() * distractors.length)];
-      extraLetters.push(random);
+    isDrawingRef.current = false;
+    try {
+      canvas.releasePointerCapture(event.pointerId);
+    } catch {
+      // ignore
     }
-
-    const allLetters = [...units, ...extraLetters].map((value, index) => ({
-      id: `${value}-${index}-${Math.random().toString(36).slice(2)}`,
-      value,
-    }));
-
-    return shuffleArray(allLetters);
   }
 
-  function shuffleArray<T>(array: T[]) {
-    return [...array].sort(() => Math.random() - 0.5);
+  function handlePickLetter(index: number) {
+    if (selectedIndices.includes(index)) return;
+    setSelectedIndices((prev) => [...prev, index]);
   }
 
-  function resizeWritingCanvas() {
-    const signature = writingPadRef.current;
-    const wrapper = writingBoxRef.current;
-
-    if (!signature || !wrapper) return;
-
-    const canvas = signature.getCanvas();
-    const rect = wrapper.getBoundingClientRect();
-
-    const width = Math.floor(rect.width);
-    const height = Math.floor(rect.height);
-
-    if (width <= 0 || height <= 0) return;
-
-    const ratio = Math.max(window.devicePixelRatio || 1, 1);
-
-    canvas.width = width * ratio;
-    canvas.height = height * ratio;
-
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-
-    const context = canvas.getContext("2d");
-
-    if (context) {
-      context.setTransform(1, 0, 0, 1, 0, 0);
-      context.scale(ratio, ratio);
-    }
-
-    signature.clear();
-    setWritingTick((prev) => prev + 1);
+  function handleRemoveLastLetter() {
+    setSelectedIndices((prev) => prev.slice(0, -1));
   }
 
-  function startLesson() {
-    setHasStarted(true);
-    setMessage("เริ่มเรียนแล้ว ฟังเสียงและทำแบบฝึกได้เลย");
-
-    window.setTimeout(() => {
-      speakWord();
-    }, 250);
+  function handleResetLetters() {
+    setSelectedIndices([]);
   }
 
-  function speakWord() {
-    const utterance = new SpeechSynthesisUtterance(currentWord.word);
-    utterance.lang = language === "en" ? "en-US" : "th-TH";
-    utterance.rate = 0.75;
+  async function handleCheckAnswer() {
+    if (!profile || !user) return;
 
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    const expected = normalizeWord(currentWord.text, currentWord.lang);
+    const wordKey = getWordKey(currentWord);
 
-    setMessage("ฟังเสียงแล้วเรียงตัวอักษร จากนั้นเขียนคำศัพท์");
-  }
-
-  function switchLanguage(lang: LanguageType) {
-    setLanguage(lang);
-    setWordIndex(0);
-    setMessage(lang === "en" ? "เปลี่ยนเป็นแบบฝึกภาษาอังกฤษแล้ว" : "เปลี่ยนเป็นแบบฝึกภาษาไทยแล้ว");
-  }
-
-  function nextWord() {
-    setWordIndex((prev) => (prev + 1) % currentList.length);
-  }
-
-  function prevWord() {
-    setWordIndex((prev) => (prev - 1 + currentList.length) % currentList.length);
-  }
-
-  function clearLetters() {
-    const selected = answerSlots.filter(Boolean) as LetterTile[];
-    setLetterTray((prev) => shuffleArray([...prev, ...selected]));
-    setAnswerSlots(Array(wordUnits.length).fill(null));
-    setResultType("idle");
-    setMessage("ล้างตัวอักษรแล้ว ลองเรียงใหม่ได้เลย");
-  }
-
-  function clearWriting() {
-    writingPadRef.current?.clear();
-    setWritingTick((prev) => prev + 1);
-    setResultType("idle");
-    setMessage("ล้างกระดานเขียนแล้ว เขียนใหม่ได้เลย");
-  }
-
-  function selectTile(tile: LetterTile) {
-    const emptyIndex = answerSlots.findIndex((slot) => slot === null);
-    if (emptyIndex === -1) {
-      setMessage("ช่องคำตอบเต็มแล้ว ถ้าจะเปลี่ยนให้แตะตัวอักษรในช่องคำตอบก่อน");
+    if (!hasDrawnRef.current) {
+      setCheckState('error');
+      setFeedback('ต้องลองเขียนคำนี้ในช่องก่อน แล้วค่อยตรวจคำตอบ');
       return;
     }
 
-    const newSlots = [...answerSlots];
-    newSlots[emptyIndex] = tile;
-
-    setAnswerSlots(newSlots);
-    setLetterTray((prev) => prev.filter((item) => item.id !== tile.id));
-    setResultType("idle");
-  }
-
-  function removeSlot(index: number) {
-    const tile = answerSlots[index];
-    if (!tile) return;
-
-    const newSlots = [...answerSlots];
-    newSlots[index] = null;
-
-    setAnswerSlots(newSlots);
-    setLetterTray((prev) => shuffleArray([...prev, tile]));
-    setResultType("idle");
-  }
-
-  async function checkAnswer() {
-    if (!user) return;
-
-    const written = writingPadRef.current ? !writingPadRef.current.isEmpty() : false;
-    const currentArrangedWord = answerSlots.map((slot) => slot?.value || "").join("");
-    const complete = answerSlots.every(Boolean);
-    const correct = currentArrangedWord === currentWord.word;
-
-    if (!complete) {
-      setResultType("error");
-      setMessage("ยังเรียงตัวอักษรไม่ครบทุกช่อง ลองเลือกตัวอักษรให้ครบก่อนนะ");
+    if (normalizedSelectedText !== expected) {
+      setCheckState('error');
+      setFeedback('เรียงตัวอักษรยังไม่ถูก ลองใหม่อีกครั้งนะ');
       return;
     }
 
-    if (!correct) {
-      setResultType("error");
-      setMessage("ยังเรียงตัวอักษรไม่ถูก ลองฟังเสียงซ้ำ แล้วจัดตัวอักษรใหม่อีกครั้ง");
+    if (profile.completedWords.includes(wordKey)) {
+      setCheckState('success');
+      setFeedback('เก่งมาก! คำนี้เคยได้คะแนนแล้ว แต่ยังฝึกซ้ำได้');
       return;
     }
 
-    if (!written) {
-      setResultType("error");
-      setMessage("เรียงถูกแล้ว! เขียนคำศัพท์ลงบนกระดานอีกนิด เพื่อรับ 1 คะแนน");
-      return;
-    }
+    const nextCompletedWords = [...profile.completedWords, wordKey];
+    const nextCoins = profile.coins + 1;
 
-    await awardPoint();
-
-    setResultType("success");
-    setMessage("เก่งมาก! เรียงถูกและเขียนแล้ว ได้ 1 คะแนน");
-
-    window.setTimeout(() => {
-      nextWord();
-    }, 1300);
-  }
-
-  async function awardPoint() {
-    if (!user || !profile) return;
-
-    const userRef = doc(db, "users", user.uid);
-    const publicRef = doc(db, "publicProfiles", user.uid);
-    const historyRef = collection(db, "users", user.uid, "history");
-
-    await updateDoc(userRef, {
-      coins: increment(1),
-      totalCorrect: increment(1),
-      updatedAt: serverTimestamp(),
+    await saveProfilePatch({
+      coins: nextCoins,
+      completedWords: nextCompletedWords,
     });
 
-    await setDoc(
-      publicRef,
-      {
-        uid: user.uid,
+    setCheckState('success');
+    setFeedback('ถูกต้อง! ได้ 1 คะแนน 🎉');
+  }
+
+  async function handleThemeChange(theme: ThemeKey) {
+    if (!profile) return;
+    setSavingProfile(true);
+    try {
+      await saveProfilePatch({ theme });
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  async function handleProfileSave() {
+    if (!profile) return;
+    setSavingProfile(true);
+    try {
+      await saveProfilePatch({
         name: profile.name,
         className: profile.className,
-        avatar: profile.avatar,
-        coins: increment(1),
-        totalCorrect: increment(1),
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
-
-    await addDoc(historyRef, {
-      word: currentWord.word,
-      language,
-      earnedCoin: 1,
-      createdAt: serverTimestamp(),
-    });
+      });
+      alert('บันทึกโปรไฟล์เรียบร้อยแล้ว');
+    } finally {
+      setSavingProfile(false);
+    }
   }
 
-  async function buyReward(item: RewardItem) {
+  async function handleAvatarUpload(event: React.ChangeEvent<HTMLInputElement>) {
     if (!user || !profile) return;
 
-    if (profile.coins < item.price) {
-      setMessage("คะแนนยังไม่พอสำหรับแลกรางวัลนี้");
-      setActiveTab("shop");
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAvatar(true);
+
+    try {
+      const fileRef = ref(storage, `avatars/${user.uid}/${Date.now()}-${file.name}`);
+      await uploadBytes(fileRef, file);
+      const url = await getDownloadURL(fileRef);
+
+      await saveProfilePatch({
+        avatarUrl: url,
+      });
+
+      alert('อัปโหลดรูปโปรไฟล์เรียบร้อยแล้ว');
+    } catch (error) {
+      console.error(error);
+      alert('อัปโหลดรูปไม่สำเร็จ');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
+
+  async function handleClaimReward(rewardId: string) {
+    if (!profile) return;
+
+    const reward = REWARD_ITEMS.find((item) => item.id === rewardId);
+    if (!reward) return;
+
+    if (profile.claimedRewardIds.includes(rewardId)) {
+      alert('รับรางวัลนี้ไปแล้ว');
       return;
     }
 
-    const userRef = doc(db, "users", user.uid);
-    const publicRef = doc(db, "publicProfiles", user.uid);
-    const rewardRef = doc(collection(db, "users", user.uid, "rewards"));
+    if (profile.coins < reward.cost) {
+      alert(`ยังมีคะแนนไม่พอ ต้องมีอย่างน้อย ${reward.cost} คะแนน`);
+      return;
+    }
 
-    await runTransaction(db, async (transaction) => {
-      const userSnap = await transaction.get(userRef);
-
-      if (!userSnap.exists()) {
-        throw new Error("ไม่พบข้อมูลผู้ใช้");
-      }
-
-      const currentPoints = Number(userSnap.data().coins || 0);
-
-      if (currentPoints < item.price) {
-        throw new Error("คะแนนไม่พอ");
-      }
-
-      transaction.update(userRef, {
-        coins: currentPoints - item.price,
-        updatedAt: serverTimestamp(),
-      });
-
-      transaction.set(
-        publicRef,
-        {
-          coins: currentPoints - item.price,
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
-
-      transaction.set(rewardRef, {
-        rewardId: item.id,
-        name: item.name,
-        price: item.price,
-        icon: item.icon,
-        createdAt: serverTimestamp(),
-      });
-    });
-
-    setMessage(`แลกรางวัล ${item.name} สำเร็จแล้ว`);
+    const nextRewardIds = [...profile.claimedRewardIds, rewardId];
+    await saveProfilePatch({ claimedRewardIds: nextRewardIds });
+    alert(`รับรางวัล "${reward.title}" เรียบร้อยแล้ว`);
   }
 
-  async function saveProfile() {
-    if (!user || !profile) return;
+  function handleNextWord() {
+    setWordIndex((prev) => (prev + 1) % currentWords.length);
+  }
 
-    const userRef = doc(db, "users", user.uid);
-    const publicRef = doc(db, "publicProfiles", user.uid);
-
-    await setDoc(
-      userRef,
-      {
-        name: profileName,
-        className: profileClass,
-        avatar: profileAvatar,
-        theme: profileTheme,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
-
-    await setDoc(
-      publicRef,
-      {
-        uid: user.uid,
-        name: profileName,
-        className: profileClass,
-        avatar: profileAvatar,
-        coins: profile.coins || 0,
-        totalCorrect: profile.totalCorrect || 0,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
-
-    setMessage("บันทึกโปรไฟล์เรียบร้อยแล้ว");
+  function handlePrevWord() {
+    setWordIndex((prev) => (prev - 1 + currentWords.length) % currentWords.length);
   }
 
   async function handleLogout() {
     await signOut(auth);
+    setActiveTab('learn');
+    setProfile(null);
   }
 
-  if (authLoading) {
-    return (
-      <div className="pageBg">
-        <div className="loadingCard">กำลังโหลด...</div>
-      </div>
-    );
+  function getRank() {
+    if (!user) return '-';
+    const index = leaderboard.findIndex((item) => item.uid === user.uid);
+    if (index === -1) return '-';
+    return `#${index + 1}`;
   }
 
-  if (!user) {
-    return <AuthPage />;
-  }
-
-  if (!profile) {
-    return (
-      <div className="pageBg">
-        <div className="loadingCard">กำลังโหลดข้อมูลผู้ใช้...</div>
-      </div>
-    );
-  }
-
-  const currentUser = user;
-  const currentProfile = profile;
-
-  function renderLearnPage() {
-    return (
-      <>
-        <div className="pageTitle">ฝึกฟัง เรียงคำ และเขียน</div>
-
-        <div className="langSwitch">
-          <button
-            className={`langBtn ${language === "en" ? "active" : ""}`}
-            onClick={() => switchLanguage("en")}
-          >
-            ภาษาอังกฤษ
-          </button>
-
-          <button
-            className={`langBtn ${language === "th" ? "active" : ""}`}
-            onClick={() => switchLanguage("th")}
-          >
-            ภาษาไทย
-          </button>
-
-          <button className="hintBtn" onClick={() => setShowAnswer((prev) => !prev)}>
-            {showAnswer ? "ซ่อนคำเฉลย" : "ดูคำเฉลย"}
-          </button>
-        </div>
-
-        {!hasStarted && (
-          <div className="startCard">
-            <button className="startBtn" onClick={startLesson}>
-              ▶ เริ่มเรียน
-            </button>
-            <p>กดเริ่มเรียน 1 ครั้ง หลังจากนั้นเมื่อเปลี่ยนคำ ระบบจะอ่านเสียงให้อัตโนมัติ</p>
-          </div>
-        )}
-
-        <section className="soundHero">
-          <div className="soundCircle">🔊</div>
-
-          <div className="soundContent">
-            <div className="soundTitle">โจทย์เสียง</div>
-            <div className="soundDesc">
-              ฟังเสียง แล้วเรียงตัวอักษรให้ถูก จากนั้นเขียนคำศัพท์บนกระดาน
-            </div>
-
-            {showAnswer ? (
-              <div className="answerReveal">
-                <span>{currentWord.word}</span>
-                <small>{currentWord.meaning}</small>
-              </div>
-            ) : (
-              <div className="hiddenAnswer">คำนี้มี {wordUnits.length} ช่อง</div>
-            )}
-          </div>
-
-          <button className="soundBtn" onClick={speakWord}>
-            ฟังเสียงซ้ำ
-          </button>
-        </section>
-
-        <section className="answerBoard">
-          <div className="sectionHeader">
-            <div>
-              <h3>1) เรียงตัวอักษร</h3>
-              <p>แตะตัวอักษรจากถาด เพื่อวางในช่องคำตอบ</p>
-            </div>
-            <button className="ghostBtn" onClick={clearLetters}>
-              ล้างตัวอักษร
-            </button>
-          </div>
-
-          <div className="slotsRow">
-            {wordUnits.map((_, index) => (
-              <button
-                key={`slot-${index}`}
-                className={`answerSlot ${answerSlots[index] ? "filled" : ""}`}
-                onClick={() => removeSlot(index)}
-              >
-                {answerSlots[index]?.value || ""}
-              </button>
-            ))}
-          </div>
-
-          <div className="trayPanel">
-            <div className="trayTitle">ถาดตัวอักษร</div>
-            <div className="letterTray">
-              {letterTray.map((tile) => (
-                <button key={tile.id} className="letterTile" onClick={() => selectTile(tile)}>
-                  {tile.value}
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="writingPanel">
-          <div className="sectionHeader">
-            <div>
-              <h3>2) เขียนคำศัพท์</h3>
-              <p>เขียนด้วยนิ้ว ปากกา tablet หรือเมาส์</p>
-            </div>
-            <button className="ghostBtn" onClick={clearWriting}>
-              ล้างกระดาน
-            </button>
-          </div>
-
-          <div className="writingBox" ref={writingBoxRef}>
-            <SignatureCanvas
-              ref={writingPadRef}
-              penColor="#111827"
-              minWidth={3}
-              maxWidth={7}
-              onEnd={() => {
-                setWritingTick((prev) => prev + 1);
-              }}
-              canvasProps={{
-                className: "writingCanvas",
-              }}
-            />
-          </div>
-        </section>
-
-        <section className="statusGrid">
-          <div
-            className={`resultBox ${
-              resultType === "success" ? "success" : resultType === "error" ? "error" : "neutral"
-            }`}
-          >
-            <div className="resultIcon">
-              {resultType === "success" ? "⭐" : resultType === "error" ? "🙂" : "✨"}
-            </div>
-            <div className="resultTitle">
-              {resultType === "success"
-                ? "ได้คะแนน!"
-                : resultType === "error"
-                  ? "ลองอีกครั้ง"
-                  : "พร้อมตรวจ"}
-            </div>
-            <div className="resultText">{message}</div>
-          </div>
-
-          <div className="checkPanel">
-            <div className="miniStatus">
-              <span>เรียงครบ</span>
-              <b>{isArrangeComplete ? "ผ่าน" : "ยังไม่ครบ"}</b>
-            </div>
-
-            <div className="miniStatus">
-              <span>เรียงถูก</span>
-              <b>{isArrangeCorrect ? "ถูก" : "รอตรวจ"}</b>
-            </div>
-
-            <div className="miniStatus">
-              <span>เขียนแล้ว</span>
-              <b>{hasWritten ? "เขียนแล้ว" : "ยังไม่ได้เขียน"}</b>
-            </div>
-
-            <button className="checkBtn" onClick={checkAnswer}>
-              ตรวจคำตอบ
-            </button>
-          </div>
-        </section>
-
-        <div className="actionRow">
-          <button className="smallBtn" onClick={prevWord}>
-            ⬅ คำก่อนหน้า
-          </button>
-          <button className="smallBtn" onClick={nextWord}>
-            คำถัดไป ➡
-          </button>
-        </div>
-      </>
-    );
-  }
-
-  function renderScorePage() {
-    return (
-      <div className="simplePage">
-        <h2>คะแนนของฉัน</h2>
-
-        <div className="scoreCards">
-          <div className="bigScoreCard">⭐ {currentProfile.coins || 0} คะแนน</div>
-          <div className="bigScoreCard">✅ ถูกทั้งหมด {currentProfile.totalCorrect || 0} คำ</div>
-          <div className="bigScoreCard">🎁 รางวัล {myRewards.length} ชิ้น</div>
-        </div>
-
-        <h3 className="sectionTitle">อันดับเพื่อน</h3>
-        <div className="leaderboard">
-          {leaderboard.map((item, index) => (
-            <div key={item.uid} className={item.uid === currentUser.uid ? "me" : ""}>
-              {index + 1}. {item.avatar} {item.name} — {item.coins} คะแนน
-            </div>
-          ))}
-        </div>
-
-        <h3 className="sectionTitle">ประวัติล่าสุด</h3>
-        <div className="historyList">
-          {history.length === 0 && <div className="emptyText">ยังไม่มีประวัติการฝึก</div>}
-
-          {history.map((item, index) => (
-            <div key={index} className="historyItem">
-              <span>{item.language === "en" ? "EN" : "TH"}</span>
-              <b>{item.word}</b>
-              <em>+{item.earnedCoin} คะแนน</em>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  function renderShopPage() {
-    return (
-      <div className="simplePage">
-        <h2>ร้านของรางวัล</h2>
-        <p className="shopIntro">คะแนนของฉัน: {currentProfile.coins || 0} คะแนน</p>
-
-        <div className="shopGrid">
-          {SHOP_ITEMS.map((item) => (
-            <div className="shopItem" key={item.id}>
-              <div className="shopEmoji">{item.icon}</div>
-              <h3>{item.name}</h3>
-              <p>{item.price} คะแนน</p>
-              <button onClick={() => buyReward(item)}>แลกรางวัล</button>
-            </div>
-          ))}
-        </div>
-
-        <h3 className="sectionTitle">รางวัลของฉัน</h3>
-        <div className="rewardList">
-          {myRewards.length === 0 && <div className="emptyText">ยังไม่มีรางวัล</div>}
-
-          {myRewards.map((item, index) => (
-            <div className="rewardBadge" key={index}>
-              {item.icon} {item.name}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  function renderProfilePage() {
-    return (
-      <div className="simplePage">
-        <h2>โปรไฟล์</h2>
-
-        <div className="profileCard">
-          <div className="profileAvatar">{profileAvatar}</div>
-
-          <div className="profileFields">
-            <label>ชื่อของฉัน</label>
-            <input value={profileName} onChange={(e) => setProfileName(e.target.value)} />
-
-            <label>ห้องเรียน</label>
-            <input value={profileClass} onChange={(e) => setProfileClass(e.target.value)} />
-
-            <label>เลือก Avatar</label>
-            <div className="avatarOptions">
-              {AVATARS.map((avatar) => (
-                <button
-                  key={avatar}
-                  className={profileAvatar === avatar ? "selectedAvatar" : ""}
-                  onClick={() => setProfileAvatar(avatar)}
-                >
-                  {avatar}
-                </button>
-              ))}
-            </div>
-
-            <label>เปลี่ยนธีมสี</label>
-            <div className="themeDots">
-              {THEMES.map((theme) => (
-                <button
-                  key={theme}
-                  className={`${theme} ${profileTheme === theme ? "selectedTheme" : ""}`}
-                  onClick={() => setProfileTheme(theme)}
-                ></button>
-              ))}
-            </div>
-
-            <button className="saveProfileBtn" onClick={saveProfile}>
-              บันทึกโปรไฟล์
-            </button>
-
-            <button className="logoutBtn" onClick={handleLogout}>
-              ออกจากระบบ
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`pageBg theme-${currentProfile.theme || "blue"}`}>
-      <div className="browserFrame">
-        <div className="browserTop">
-          <div className="browserDots">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <div className="browserUrl">app.wordstarkids.com</div>
-        </div>
-
-        <div className="appShell">
-          <header className="topBar">
-            <div className="brand">Word Star Kids</div>
-
-            <div className="topRight">
-              <div className="coinPill">⭐ {currentProfile.coins || 0} คะแนน</div>
-              <div className="avatarMini">{currentProfile.avatar || "🧒"}</div>
-            </div>
-          </header>
-
-          <main className="mainCard">
-            {activeTab === "learn" && renderLearnPage()}
-            {activeTab === "score" && renderScorePage()}
-            {activeTab === "shop" && renderShopPage()}
-            {activeTab === "profile" && renderProfilePage()}
-          </main>
-
-          <nav className="bottomNav">
-            <button
-              className={`navItem ${activeTab === "learn" ? "active" : ""}`}
-              onClick={() => setActiveTab("learn")}
-            >
-              📘 เรียน
-            </button>
-
-            <button
-              className={`navItem ${activeTab === "score" ? "active" : ""}`}
-              onClick={() => setActiveTab("score")}
-            >
-              🏆 คะแนน
-            </button>
-
-            <button
-              className={`navItem ${activeTab === "shop" ? "active" : ""}`}
-              onClick={() => setActiveTab("shop")}
-            >
-              🎁 ร้านค้า
-            </button>
-
-            <button
-              className={`navItem ${activeTab === "profile" ? "active" : ""}`}
-              onClick={() => setActiveTab("profile")}
-            >
-              👤 โปรไฟล์
-            </button>
-          </nav>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AuthPage() {
-  const [mode, setMode] = useState<"login" | "register">("login");
-  const [name, setName] = useState("");
-  const [className, setClassName] = useState("ป.1/1");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("123456");
-  const [error, setError] = useState("");
-
-  async function handleSubmit() {
-    setError("");
-
-    try {
-      if (mode === "register") {
-        const credential = await createUserWithEmailAndPassword(auth, email, password);
-        const uid = credential.user.uid;
-
-        const userRef = doc(db, "users", uid);
-        const publicRef = doc(db, "publicProfiles", uid);
-
-        const displayName = name || email.split("@")[0];
-
-        await setDoc(userRef, {
-          uid,
-          email,
-          name: displayName,
-          className,
-          avatar: "🧒",
-          theme: "blue",
-          coins: 0,
-          totalCorrect: 0,
-          createdAt: serverTimestamp(),
-        });
-
-        await setDoc(publicRef, {
-          uid,
-          name: displayName,
-          className,
-          avatar: "🧒",
-          coins: 0,
-          totalCorrect: 0,
-          updatedAt: serverTimestamp(),
-        });
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-      }
-    } catch (err: any) {
-      setError(err.message || "เกิดข้อผิดพลาด");
+  function getThemeClass(theme: ThemeKey) {
+    switch (theme) {
+      case 'minecraft':
+        return 'theme-minecraft';
+      case 'pinkRabbit':
+        return 'theme-rabbit';
+      case 'snowPrincess':
+        return 'theme-snow';
+      case 'spongeSea':
+        return 'theme-sponge';
+      default:
+        return 'theme-snow';
     }
   }
 
+  if (authLoading || profileLoading) {
+    return (
+      <div className="loadingScreen">
+        <div className="loadingCard">
+          <div className="loadingEmoji">⭐</div>
+          <h2>กำลังโหลด Word Star Kids...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || !profile) {
+    return (
+      <div className="authPage">
+        <div className="authCard">
+          <div className="authBrand">Word Star Kids</div>
+          <p className="authSub">เข้าสู่ระบบเพื่อเก็บคะแนนและแข่งกับเพื่อน</p>
+
+          <div className="authSwitch">
+            <button
+              className={authMode === 'login' ? 'authSwitchBtn active' : 'authSwitchBtn'}
+              onClick={() => setAuthMode('login')}
+            >
+              Login
+            </button>
+            <button
+              className={authMode === 'register' ? 'authSwitchBtn active' : 'authSwitchBtn'}
+              onClick={() => setAuthMode('register')}
+            >
+              Register
+            </button>
+          </div>
+
+          {authMode === 'register' && (
+            <>
+              <label>ชื่อเด็ก</label>
+              <input
+                value={registerName}
+                onChange={(e) => setRegisterName(e.target.value)}
+                placeholder="เช่น น้องต้นกล้า"
+              />
+
+              <label>ห้องเรียน</label>
+              <input
+                value={registerClassName}
+                onChange={(e) => setRegisterClassName(e.target.value)}
+                placeholder="เช่น ป.1/1"
+              />
+            </>
+          )}
+
+          <label>Email</label>
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="เช่น pond01@wordstar.local"
+          />
+
+          <label>Password</label>
+          <input
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            type="password"
+          />
+
+          {authError && <div className="authError">{authError}</div>}
+
+          <button className="authSubmit" onClick={handleAuthSubmit}>
+            {authMode === 'login' ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'}
+          </button>
+
+          <div className="authHint">
+            ช่วงทดลองสามารถใช้ email สมมติได้ เช่น pond01@wordstar.local และ password อย่างน้อย 6 ตัว
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const themeClass = getThemeClass(profile.theme);
+
   return (
-    <div className="pageBg">
-      <div className="authCard">
-        <h1>Word Star Kids</h1>
-        <p>เข้าสู่ระบบเพื่อเก็บคะแนนและแข่งกับเพื่อน</p>
+    <div className={`appShell ${themeClass}`}>
+      <div className="backgroundDecor decorOne" />
+      <div className="backgroundDecor decorTwo" />
+      <div className="backgroundDecor decorThree" />
 
-        <div className="authSwitch">
-          <button className={mode === "login" ? "active" : ""} onClick={() => setMode("login")}>
-            Login
+      <div className="appContainer">
+        <header className="topBar glassCard">
+          <div>
+            <div className="brandTitle">Word Star Kids</div>
+            <div className="brandSub">เรียนคำศัพท์ • สนุกทุกวัน • เก่งขึ้นทุกวัน</div>
+          </div>
+
+          <div className="topBarRight">
+            <div className="coinBadge">🪙 {profile.coins}</div>
+            <div className="rankBadge">🏆 {getRank()}</div>
+            <div className="avatarBadge">
+              {profile.avatarUrl ? (
+                <img src={profile.avatarUrl} alt="avatar" />
+              ) : (
+                <span>🧒</span>
+              )}
+            </div>
+          </div>
+        </header>
+
+        <main className="mainContent">
+          {activeTab === 'learn' && (
+            <section className="screenCard lessonScreen">
+              <div className="sectionTitle">ฝึกเขียนคำศัพท์</div>
+
+              <div className="languageTabs">
+                <button
+                  className={language === 'en' ? 'langBtn active' : 'langBtn'}
+                  onClick={() => {
+                    setLanguage('en');
+                    setWordIndex(0);
+                  }}
+                >
+                  GB ภาษาอังกฤษ
+                </button>
+                <button
+                  className={language === 'th' ? 'langBtn active' : 'langBtn'}
+                  onClick={() => {
+                    setLanguage('th');
+                    setWordIndex(0);
+                  }}
+                >
+                  TH ภาษาไทย
+                </button>
+                <button
+                  className={showAnswer ? 'langBtn answer active' : 'langBtn answer'}
+                  onClick={() => setShowAnswer((prev) => !prev)}
+                >
+                  {showAnswer ? 'ซ่อนเฉลย' : 'ดูคำเฉลย'}
+                </button>
+              </div>
+
+              <div className="heroPrompt glassCard">
+                <div className="heroPromptIcon">
+                  {profile.theme === 'minecraft' && '🟩'}
+                  {profile.theme === 'pinkRabbit' && '🐰'}
+                  {profile.theme === 'snowPrincess' && '❄️'}
+                  {profile.theme === 'spongeSea' && '🌊'}
+                </div>
+
+                <div className="heroPromptCenter">
+                  <div className="bigQuestion">{showAnswer ? currentWord.text : '?'}</div>
+                  <div className="heroPromptText">
+                    ฟังเสียง → เรียงตัวอักษร → เขียนคำนี้ลงในช่อง
+                  </div>
+                </div>
+
+                <button
+                  className="speakButton"
+                  onClick={() => speakWord(currentWord.text, currentWord.lang)}
+                >
+                  🔊 ฟังเสียง
+                </button>
+              </div>
+
+              <div className="lessonGrid">
+                <div className="leftColumn">
+                  <div className="practiceCard glassCard">
+                    <div className="cardTitle">เรียงตัวอักษรให้ถูกต้อง</div>
+
+                    <div className="answerSlots">
+                      {splitChars(normalizeWord(currentWord.text, currentWord.lang)).map((_, slotIndex) => (
+                        <div className="answerSlot" key={`slot-${slotIndex}`}>
+                          {selectedIndices[slotIndex] !== undefined
+                            ? letterBank[selectedIndices[slotIndex]]
+                            : ''}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="letterTray">
+                      {letterBank.map((char, index) => {
+                        const used = selectedIndices.includes(index);
+                        return (
+                          <button
+                            key={`${char}-${index}`}
+                            className={used ? 'letterButton used' : 'letterButton'}
+                            onClick={() => handlePickLetter(index)}
+                            disabled={used}
+                          >
+                            {char}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="miniControls">
+                      <button className="miniBtn" onClick={handleRemoveLastLetter}>
+                        ↩ ลบตัวท้าย
+                      </button>
+                      <button className="miniBtn" onClick={handleResetLetters}>
+                        🧽 ล้างคำ
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="practiceCard glassCard">
+                    <div className="cardTitle">เขียนคำศัพท์ตรงนี้</div>
+
+                    <div className="writingPad" ref={canvasWrapRef}>
+                      <div className="writingLines" />
+                      <canvas
+                        ref={canvasRef}
+                        className="writingCanvas"
+                        onPointerDown={handlePointerDown}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={handlePointerUp}
+                        onPointerLeave={handlePointerUp}
+                      />
+                      <button className="clearCanvasBtn" onClick={clearCanvas}>
+                        ✏️ ล้างเส้น
+                      </button>
+                    </div>
+
+                    <div className="actionRow">
+                      <button className="navBtn" onClick={handlePrevWord}>
+                        ← คำก่อนหน้า
+                      </button>
+                      <button className="checkBtn" onClick={handleCheckAnswer}>
+                        ✅ ตรวจคำตอบ
+                      </button>
+                      <button className="navBtn" onClick={handleNextWord}>
+                        คำถัดไป →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rightColumn">
+                  <div className={checkState === 'success' ? 'resultCard success' : 'resultCard'}>
+                    <div className="resultEmoji">⭐</div>
+                    <div className="resultTitle">ผลการตรวจ</div>
+                    <div className="resultText">
+                      {feedback || 'กดตรวจคำตอบเมื่อเรียงคำและเขียนเสร็จแล้ว'}
+                    </div>
+                  </div>
+
+                  <div className="infoCard glassCard">
+                    <div className="cardTitle">สถานะปัจจุบัน</div>
+                    <div className="infoLine">ภาษา: {language === 'en' ? 'อังกฤษ' : 'ไทย'}</div>
+                    <div className="infoLine">
+                      คำที่: {wordIndex + 1} / {currentWords.length}
+                    </div>
+                    <div className="infoLine">คะแนนของฉัน: {profile.coins} คะแนน</div>
+                  </div>
+
+                  <div className="infoCard glassCard">
+                    <div className="cardTitle">วิธีเล่น</div>
+                    <ul className="tipsList">
+                      <li>กดฟังเสียงอัตโนมัติเมื่อเปลี่ยนคำ</li>
+                      <li>ลากสายตาดูถาดตัวอักษร แล้วกดเรียงให้ถูก</li>
+                      <li>เขียนคำลงในช่องด้วยนิ้ว / เมาส์ / ปากกา</li>
+                      <li>ถ้าเรียงคำถูกและมีการเขียน จะได้ 1 คะแนน</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {activeTab === 'score' && (
+            <section className="screenCard">
+              <div className="sectionTitle">คะแนนของฉัน</div>
+
+              <div className="scoreTopRow">
+                <div className="scoreBox glassCard">
+                  <div className="scoreIcon">🪙</div>
+                  <div className="scoreLabel">คะแนนปัจจุบัน</div>
+                  <div className="scoreValue">{profile.coins}</div>
+                </div>
+
+                <div className="scoreBox glassCard">
+                  <div className="scoreIcon">🏆</div>
+                  <div className="scoreLabel">อันดับของฉัน</div>
+                  <div className="scoreValue">{getRank()}</div>
+                </div>
+              </div>
+
+              <div className="leaderboardCard glassCard">
+                <div className="cardTitle">ตารางอันดับเพื่อน</div>
+
+                <div className="leaderboardList">
+                  {leaderboard.map((item, index) => {
+                    const isMe = user?.uid === item.uid;
+                    return (
+                      <div key={item.uid} className={isMe ? 'leaderItem me' : 'leaderItem'}>
+                        <div className="leaderLeft">
+                          <div className="leaderRank">{index + 1}</div>
+                          <div className="leaderAvatar">
+                            {item.avatarUrl ? (
+                              <img src={item.avatarUrl} alt={item.name} />
+                            ) : (
+                              <span>🧒</span>
+                            )}
+                          </div>
+                          <div>
+                            <div className="leaderName">
+                              {item.name} {isMe ? '(ฉัน)' : ''}
+                            </div>
+                            <div className="leaderClass">{item.className || 'ยังไม่ได้ระบุห้อง'}</div>
+                          </div>
+                        </div>
+                        <div className="leaderCoins">{item.coins} คะแนน</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {activeTab === 'shop' && (
+            <section className="screenCard">
+              <div className="sectionTitle">ร้านของรางวัล</div>
+
+              <div className="shopGrid">
+                {REWARD_ITEMS.map((reward) => {
+                  const claimed = profile.claimedRewardIds.includes(reward.id);
+                  const canClaim = profile.coins >= reward.cost && !claimed;
+
+                  return (
+                    <div key={reward.id} className="rewardCard glassCard">
+                      <div className="rewardEmoji">{reward.emoji}</div>
+                      <div className="rewardTitle">{reward.title}</div>
+                      <div className="rewardCost">{reward.cost} คะแนน</div>
+
+                      <button
+                        className={claimed ? 'rewardBtn done' : canClaim ? 'rewardBtn' : 'rewardBtn disabled'}
+                        onClick={() => handleClaimReward(reward.id)}
+                        disabled={!canClaim}
+                      >
+                        {claimed ? 'รับแล้ว' : canClaim ? 'แลกรางวัล' : 'คะแนนไม่พอ'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="shopNote glassCard">
+                คะแนนของฉันตอนนี้: <strong>{profile.coins}</strong> คะแนน
+              </div>
+            </section>
+          )}
+
+          {activeTab === 'profile' && (
+            <section className="screenCard">
+              <div className="sectionTitle">โปรไฟล์</div>
+
+              <div className="profileGrid">
+                <div className="profileMain glassCard">
+                  <div className="profileHeader">
+                    <div className="profileAvatarLarge">
+                      {profile.avatarUrl ? (
+                        <img src={profile.avatarUrl} alt="profile" />
+                      ) : (
+                        <span>🧒</span>
+                      )}
+                    </div>
+
+                    <div className="profileUploadBlock">
+                      <div className="cardTitle">รูปโปรไฟล์</div>
+                      <label className="uploadBtn">
+                        {uploadingAvatar ? 'กำลังอัปโหลด...' : 'อัปโหลดรูปหน้าตัวเอง'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarUpload}
+                          disabled={uploadingAvatar}
+                        />
+                      </label>
+                      <div className="smallHint">
+                        รูปนี้จะถูกใช้แสดงในหน้า leaderboard ให้เพื่อนเห็น
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="profileForm">
+                    <label>ชื่อเด็ก</label>
+                    <input
+                      value={profile.name}
+                      onChange={(e) =>
+                        setProfile((prev) =>
+                          prev ? { ...prev, name: e.target.value } : prev
+                        )
+                      }
+                    />
+
+                    <label>ห้องเรียน</label>
+                    <input
+                      value={profile.className}
+                      onChange={(e) =>
+                        setProfile((prev) =>
+                          prev ? { ...prev, className: e.target.value } : prev
+                        )
+                      }
+                      placeholder="เช่น ป.1/1"
+                    />
+
+                    <label>Email</label>
+                    <input value={profile.email} disabled />
+
+                    <button className="saveProfileBtn" onClick={handleProfileSave} disabled={savingProfile}>
+                      {savingProfile ? 'กำลังบันทึก...' : 'บันทึกข้อมูล'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="themePanel glassCard">
+                  <div className="cardTitle">เลือกธีมของฉัน</div>
+
+                  <div className="themeList">
+                    {THEME_OPTIONS.map((theme) => (
+                      <button
+                        key={theme.key}
+                        className={profile.theme === theme.key ? 'themeChoice active' : 'themeChoice'}
+                        onClick={() => handleThemeChange(theme.key)}
+                      >
+                        <div className="themePreview">
+                          <div className={`themeMini ${getThemeClass(theme.key)}`} />
+                        </div>
+                        <div className="themeInfo">
+                          <div className="themeName">
+                            {theme.emoji} {theme.title}
+                          </div>
+                          <div className="themeDesc">{theme.description}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+        </main>
+
+        <nav className="bottomNav glassCard">
+          <button
+            className={activeTab === 'learn' ? 'navItem active' : 'navItem'}
+            onClick={() => setActiveTab('learn')}
+          >
+            📘 เรียน
           </button>
-          <button className={mode === "register" ? "active" : ""} onClick={() => setMode("register")}>
-            Register
+          <button
+            className={activeTab === 'score' ? 'navItem active' : 'navItem'}
+            onClick={() => setActiveTab('score')}
+          >
+            🏆 คะแนน
           </button>
-        </div>
-
-        {mode === "register" && (
-          <>
-            <label>ชื่อเด็ก</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="เช่น น้องต้นกล้า" />
-
-            <label>ห้องเรียน</label>
-            <input value={className} onChange={(e) => setClassName(e.target.value)} placeholder="เช่น ป.1/1" />
-          </>
-        )}
-
-        <label>Email</label>
-        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="เช่น tongkla01@wordstar.local" />
-
-        <label>Password</label>
-        <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" />
-
-        {error && <div className="authError">{error}</div>}
-
-        <button className="authSubmit" onClick={handleSubmit}>
-          {mode === "login" ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}
-        </button>
-
-        <div className="authHint">
-          ช่วงทดลองสามารถใช้ email สมมติได้ เช่น pond01@wordstar.local และ password อย่างน้อย 6 ตัว
-        </div>
+          <button
+            className={activeTab === 'shop' ? 'navItem active' : 'navItem'}
+            onClick={() => setActiveTab('shop')}
+          >
+            🎁 ร้านค้า
+          </button>
+          <button
+            className={activeTab === 'profile' ? 'navItem active' : 'navItem'}
+            onClick={() => setActiveTab('profile')}
+          >
+            👤 โปรไฟล์
+          </button>
+          <button className="navItem logout" onClick={handleLogout}>
+            🚪 ออก
+          </button>
+        </nav>
       </div>
     </div>
   );
