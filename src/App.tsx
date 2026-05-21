@@ -356,6 +356,57 @@ function getThaiLetterKey(item: ThaiLetterItem) {
   return `thai-letter:${item.letter}`;
 }
 
+function getThaiLetterSpeakText(item: ThaiLetterItem) {
+  const voiceMap: Record<string, string> = {
+    ก: "กอ ไก่",
+    ข: "ขอ ไข่",
+    ฃ: "ขอ ขวด",
+    ค: "คอ ควาย",
+    ฅ: "คอ คน",
+    ฆ: "คอ ระฆัง",
+    ง: "งอ งู",
+    จ: "จอ จาน",
+    ฉ: "ฉอ ฉิ่ง",
+    ช: "ชอ ช้าง",
+    ซ: "ซอ โซ่",
+    ฌ: "ชอ เฌอ",
+    ญ: "ยอ หญิง",
+    ฎ: "ดอ ชะดา",
+    ฏ: "ตอ ปะตัก",
+    ฐ: "ถอ ถาน",
+    ฑ: "ทอ มนโท",
+    ฒ: "ทอ ผู้เฒ่า",
+    ณ: "นอ เณร",
+    ด: "ดอ เด็ก",
+    ต: "ตอ เต่า",
+    ถ: "ถอ ถุง",
+    ท: "ทอ ทหาร",
+    ธ: "ทอ ธง",
+    น: "นอ หนู",
+    บ: "บอ ใบไม้",
+    ป: "ปอ ปลา",
+    ผ: "ผอ ผึ้ง",
+    ฝ: "ฝอ ฝา",
+    พ: "พอ พาน",
+    ฟ: "ฟอ ฟัน",
+    ภ: "พอ สำเภา",
+    ม: "มอ ม้า",
+    ย: "ยอ ยัก",
+    ร: "รอ เรือ",
+    ล: "ลอ ลิง",
+    ว: "วอ แหวน",
+    ศ: "สอ ศาลา",
+    ษ: "สอ ฤาษี",
+    ส: "สอ เสือ",
+    ห: "หอ หีบ",
+    ฬ: "ลอ จุฬา",
+    อ: "ออ อ่าง",
+    ฮ: "ฮอ นกฮูก",
+  };
+
+  return voiceMap[item.letter] || item.sound;
+}
+
 function getMapPosition(score: number) {
   const maxScore = SCORE_MAP_POINTS[SCORE_MAP_POINTS.length - 1].score;
   const safeScore = Math.max(0, Math.min(score, maxScore));
@@ -443,6 +494,7 @@ function App() {
 
   const [activeTab, setActiveTab] = useState<TabKey>("learn");
   const [learningMenuOpen, setLearningMenuOpen] = useState(false);
+
   const [language, setLanguage] = useState<LangKey>("en");
   const [wordIndex, setWordIndex] = useState(0);
   const [wordOrder, setWordOrder] = useState<number[]>(() => createWordOrder(ENGLISH_WORDS.length));
@@ -603,7 +655,7 @@ function App() {
 
     if (thaiLetterStarted && activeTab === "thaiLetters") {
       const timer = window.setTimeout(() => {
-        speakWord(`${currentThaiLetter.sound} ${currentThaiLetter.word}`, "th");
+        speakWord(getThaiLetterSpeakText(currentThaiLetter), "th");
       }, 350);
 
       return () => window.clearTimeout(timer);
@@ -784,7 +836,7 @@ function App() {
 
     const speech = new SpeechSynthesisUtterance(text);
     speech.lang = lang === "en" ? "en-US" : "th-TH";
-    speech.rate = lang === "en" ? 0.82 : 0.86;
+    speech.rate = lang === "en" ? 0.82 : 0.82;
     speech.pitch = 1;
 
     window.speechSynthesis.speak(speech);
@@ -799,7 +851,7 @@ function App() {
   function startThaiLetterLesson() {
     setThaiLetterStarted(true);
     setThaiLetterFeedback("เริ่มฝึก ก-ฮ แล้ว ฟังเสียง ดูภาพ แล้วเขียนตัวอักษรเอง");
-    speakWord(`${currentThaiLetter.sound} ${currentThaiLetter.word}`, "th");
+    speakWord(getThaiLetterSpeakText(currentThaiLetter), "th");
   }
 
   function setupCanvas() {
@@ -1559,7 +1611,7 @@ function App() {
 
                   <button
                     className="speakButton"
-                    onClick={() => speakWord(`${currentThaiLetter.sound} ${currentThaiLetter.word}`, "th")}
+                    onClick={() => speakWord(getThaiLetterSpeakText(currentThaiLetter), "th")}
                     type="button"
                   >
                     ฟังเสียงซ้ำ
@@ -1612,22 +1664,7 @@ function App() {
                     <div className="writingLines" />
 
                     {showThaiLetterAnswer && (
-                      <div
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "clamp(90px, 22vw, 190px)",
-                          fontWeight: 900,
-                          color: "rgba(15, 23, 42, 0.09)",
-                          pointerEvents: "none",
-                          zIndex: 1,
-                        }}
-                      >
-                        {currentThaiLetter.letter}
-                      </div>
+                      <div className="letterGuideGhost">{currentThaiLetter.letter}</div>
                     )}
 
                     <canvas
@@ -1936,82 +1973,44 @@ function App() {
             <span></span>
           </button>
 
-          {learningMenuOpen && (
-            <div
-              style={{
-                position: "fixed",
-                left: "50%",
-                bottom: "92px",
-                transform: "translateX(-50%)",
-                zIndex: 80,
-                width: "min(92vw, 360px)",
-                padding: "12px",
-                borderRadius: "26px",
-                background: "rgba(255,255,255,0.96)",
-                boxShadow: "0 24px 70px rgba(15,23,42,0.24)",
-                border: "1px solid rgba(255,255,255,0.72)",
-                backdropFilter: "blur(18px)",
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => openTab("learn")}
-                style={{
-                  width: "100%",
-                  border: activeTab === "learn" ? "2px solid #f59e0b" : "1px solid rgba(148,163,184,0.35)",
-                  background: activeTab === "learn" ? "linear-gradient(135deg,#fff7ed,#fef3c7)" : "#ffffff",
-                  borderRadius: "18px",
-                  padding: "14px",
-                  marginBottom: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  boxShadow: "0 10px 24px rgba(15,23,42,0.08)",
-                }}
-              >
-                <span style={{ fontSize: "32px" }}>📘</span>
-                <span>
-                  <strong style={{ display: "block", fontSize: "16px" }}>ฝึกคำศัพท์</strong>
-                  <small style={{ color: "#64748b" }}>ฟังเสียง เรียงตัวอักษร และเขียนคำศัพท์</small>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => openTab("thaiLetters")}
-                style={{
-                  width: "100%",
-                  border: activeTab === "thaiLetters" ? "2px solid #f59e0b" : "1px solid rgba(148,163,184,0.35)",
-                  background: activeTab === "thaiLetters" ? "linear-gradient(135deg,#fff7ed,#fef3c7)" : "#ffffff",
-                  borderRadius: "18px",
-                  padding: "14px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  boxShadow: "0 10px 24px rgba(15,23,42,0.08)",
-                }}
-              >
-                <span style={{ fontSize: "32px" }}>✍️</span>
-                <span>
-                  <strong style={{ display: "block", fontSize: "16px" }}>ฝึกเขียน ก-ฮ</strong>
-                  <small style={{ color: "#64748b" }}>ฟังเสียง ดูภาพ คิดคำตอบ แล้วเขียนเอง</small>
-                </span>
-              </button>
-            </div>
-          )}
-
           <nav className={mobileMenuOpen ? "bottomNav glassCard mobileOpen" : "bottomNav glassCard"}>
-            <button
-              className={isLearningActive ? "navItem active" : "navItem"}
-              onClick={handleLearningMenuToggle}
-              type="button"
-            >
-              📘 เรียน
-            </button>
+            <div className="learnNavWrap">
+              <button
+                className={isLearningActive ? "navItem active" : "navItem"}
+                onClick={handleLearningMenuToggle}
+                type="button"
+              >
+                📘 เรียน
+              </button>
+
+              {learningMenuOpen && (
+                <div className="learnPopupMenu">
+                  <button
+                    className={activeTab === "learn" ? "learnPopupItem active" : "learnPopupItem"}
+                    type="button"
+                    onClick={() => openTab("learn")}
+                  >
+                    <span className="learnPopupIcon">📘</span>
+                    <span>
+                      <strong>ฝึกคำศัพท์</strong>
+                      <small>ฟังเสียง เรียงตัวอักษร และเขียนคำศัพท์</small>
+                    </span>
+                  </button>
+
+                  <button
+                    className={activeTab === "thaiLetters" ? "learnPopupItem active" : "learnPopupItem"}
+                    type="button"
+                    onClick={() => openTab("thaiLetters")}
+                  >
+                    <span className="learnPopupIcon">✍️</span>
+                    <span>
+                      <strong>ฝึกเขียน ก-ฮ</strong>
+                      <small>ฟังเสียง ดูภาพ คิดคำตอบ แล้วเขียนเอง</small>
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
 
             <button
               className={activeTab === "score" ? "navItem active" : "navItem"}
