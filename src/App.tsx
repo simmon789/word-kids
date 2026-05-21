@@ -190,14 +190,7 @@ const REWARD_ITEMS: RewardItem[] = [
 ];
 
 const DEFAULT_THEME: ThemeKey = "yellowBunny";
-const SCORE_PER_POINT = 10;
 
-/*
-  ตำแหน่งแผนที่แบบคดเคี้ยวซ้าย-ขวา
-  x/y คือเปอร์เซ็นต์ของรูป score-map.png
-  0 = START ด้านล่าง
-  140 = ใกล้ธงด้านบน
-*/
 const SCORE_MAP_POINTS: MapPoint[] = [
   { x: 50, y: 93, label: "START", score: 0 },
   { x: 42, y: 87, label: "10", score: 10 },
