@@ -194,24 +194,41 @@ const DEFAULT_THEME: ThemeKey = "yellowBunny";
 
 /*
   จุดคะแนนบน Score Map
-  ปรับรอบนี้ให้ฉีกซ้าย-ขวามากขึ้น ไม่เรียงเป็นเส้นกลาง
+  เพิ่มจาก 140 คะแนน เป็น 300 คะแนน
+  1 จุด = 10 คะแนน
 */
 const SCORE_MAP_POINTS: MapPoint[] = [
   { x: 50, y: 94, label: "START", score: 0 },
-  { x: 37, y: 88, label: "10", score: 10 },
-  { x: 57, y: 83, label: "20", score: 20 },
-  { x: 34, y: 77, label: "30", score: 30 },
-  { x: 60, y: 71, label: "40", score: 40 },
-  { x: 34, y: 65, label: "50", score: 50 },
-  { x: 54, y: 59, label: "60", score: 60 },
-  { x: 70, y: 52, label: "70", score: 70 },
-  { x: 42, y: 46, label: "80", score: 80 },
-  { x: 62, y: 39, label: "90", score: 90 },
-  { x: 43, y: 33, label: "100", score: 100 },
-  { x: 66, y: 27, label: "110", score: 110 },
-  { x: 39, y: 21, label: "120", score: 120 },
-  { x: 58, y: 15, label: "130", score: 130 },
-  { x: 51, y: 8, label: "140", score: 140 },
+  { x: 37, y: 91, label: "10", score: 10 },
+  { x: 58, y: 88, label: "20", score: 20 },
+  { x: 34, y: 85, label: "30", score: 30 },
+  { x: 61, y: 82, label: "40", score: 40 },
+  { x: 32, y: 79, label: "50", score: 50 },
+  { x: 55, y: 76, label: "60", score: 60 },
+  { x: 70, y: 73, label: "70", score: 70 },
+  { x: 42, y: 70, label: "80", score: 80 },
+  { x: 64, y: 67, label: "90", score: 90 },
+  { x: 39, y: 64, label: "100", score: 100 },
+  { x: 58, y: 61, label: "110", score: 110 },
+  { x: 73, y: 58, label: "120", score: 120 },
+  { x: 47, y: 55, label: "130", score: 130 },
+  { x: 29, y: 52, label: "140", score: 140 },
+  { x: 50, y: 49, label: "150", score: 150 },
+  { x: 68, y: 46, label: "160", score: 160 },
+  { x: 41, y: 43, label: "170", score: 170 },
+  { x: 60, y: 40, label: "180", score: 180 },
+  { x: 34, y: 37, label: "190", score: 190 },
+  { x: 55, y: 34, label: "200", score: 200 },
+  { x: 72, y: 31, label: "210", score: 210 },
+  { x: 46, y: 28, label: "220", score: 220 },
+  { x: 31, y: 25, label: "230", score: 230 },
+  { x: 54, y: 22, label: "240", score: 240 },
+  { x: 68, y: 19, label: "250", score: 250 },
+  { x: 43, y: 16, label: "260", score: 260 },
+  { x: 58, y: 13, label: "270", score: 270 },
+  { x: 38, y: 10, label: "280", score: 280 },
+  { x: 55, y: 7, label: "290", score: 290 },
+  { x: 50, y: 4, label: "300", score: 300 },
 ];
 
 function normalizeTheme(value: unknown): ThemeKey {
