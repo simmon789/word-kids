@@ -40,7 +40,12 @@ button {
 }
 
 /* =========================
-   THEME BACKGROUND - คืนรูปแบบเดิม
+   THEME BACKGROUND
+   ใช้รูปใน public/themes/
+   ชื่อไฟล์จริง:
+   theme-yellow-bunny.png
+   theme-red-blockman.png
+   theme-blue-sponge.png
    ========================= */
 
 .themeBackdrop {
@@ -57,19 +62,19 @@ button {
 .theme-yellow-bunny .themeBackdrop {
   background-image:
     linear-gradient(rgba(255, 248, 220, 0.18), rgba(255, 248, 220, 0.28)),
-    url("/themes/yellow-bunny.png");
+    url("/themes/theme-yellow-bunny.png");
 }
 
 .theme-red-blockman .themeBackdrop {
   background-image:
     linear-gradient(rgba(255, 239, 213, 0.18), rgba(255, 239, 213, 0.3)),
-    url("/themes/red-blockman.png");
+    url("/themes/theme-red-blockman.png");
 }
 
 .theme-blue-sponge .themeBackdrop {
   background-image:
     linear-gradient(rgba(219, 234, 254, 0.12), rgba(219, 234, 254, 0.26)),
-    url("/themes/blue-sponge.png");
+    url("/themes/theme-blue-sponge.png");
 }
 
 .appOverlay {
@@ -90,7 +95,7 @@ button {
 }
 
 /* =========================
-   MAIN FRAME - กลับเป็นกรอบแอปตรงกลางแบบเดิม
+   MAIN FRAME
    ========================= */
 
 .browserFrame {
@@ -1238,15 +1243,15 @@ button {
 }
 
 .themeMini.theme-yellow-bunny {
-  background-image: url("/themes/yellow-bunny.png");
+  background-image: url("/themes/theme-yellow-bunny.png");
 }
 
 .themeMini.theme-red-blockman {
-  background-image: url("/themes/red-blockman.png");
+  background-image: url("/themes/theme-red-blockman.png");
 }
 
 .themeMini.theme-blue-sponge {
-  background-image: url("/themes/blue-sponge.png");
+  background-image: url("/themes/theme-blue-sponge.png");
 }
 
 .themeName {
