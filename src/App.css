@@ -18,7 +18,7 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  background: #f8fafc;
+  background: #eef7ff;
   color: #0f172a;
 }
 
@@ -34,44 +34,41 @@ button {
 .appShell {
   position: relative;
   min-height: 100vh;
-  padding: 22px;
+  padding: 0;
   overflow-x: hidden;
-  background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.72), transparent 32%),
-    linear-gradient(135deg, #fef3c7 0%, #e0f2fe 48%, #fce7f3 100%);
+  background: #dff4ff;
 }
 
 /* =========================
-   THEME BACKGROUND
-   ใช้รูปใน public/themes/
+   THEME BACKGROUND - คืนรูปแบบเดิม
    ========================= */
 
 .themeBackdrop {
   position: fixed;
-  inset: -26px;
+  inset: 0;
   z-index: 0;
   background-size: cover;
-  background-position: center;
+  background-position: center center;
   background-repeat: no-repeat;
-  filter: saturate(1.06);
-  transform: scale(1.04);
+  filter: saturate(1.08);
+  transform: scale(1.01);
 }
 
 .theme-yellow-bunny .themeBackdrop {
   background-image:
-    linear-gradient(rgba(255, 248, 220, 0.38), rgba(255, 248, 220, 0.56)),
+    linear-gradient(rgba(255, 248, 220, 0.18), rgba(255, 248, 220, 0.28)),
     url("/themes/yellow-bunny.png");
 }
 
 .theme-red-blockman .themeBackdrop {
   background-image:
-    linear-gradient(rgba(255, 241, 242, 0.34), rgba(255, 237, 213, 0.58)),
+    linear-gradient(rgba(255, 239, 213, 0.18), rgba(255, 239, 213, 0.3)),
     url("/themes/red-blockman.png");
 }
 
 .theme-blue-sponge .themeBackdrop {
   background-image:
-    linear-gradient(rgba(219, 234, 254, 0.32), rgba(224, 242, 254, 0.58)),
+    linear-gradient(rgba(219, 234, 254, 0.12), rgba(219, 234, 254, 0.26)),
     url("/themes/blue-sponge.png");
 }
 
@@ -80,36 +77,42 @@ button {
   inset: 0;
   z-index: 1;
   background:
-    radial-gradient(circle at 12% 10%, rgba(255, 255, 255, 0.38), transparent 28%),
-    radial-gradient(circle at 90% 12%, rgba(255, 255, 255, 0.32), transparent 28%),
-    rgba(255, 255, 255, 0.08);
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.58) 0%,
+      rgba(255, 255, 255, 0.18) 21%,
+      rgba(255, 255, 255, 0.02) 38%,
+      rgba(255, 255, 255, 0.02) 62%,
+      rgba(255, 255, 255, 0.18) 79%,
+      rgba(255, 255, 255, 0.58) 100%
+    );
   pointer-events: none;
 }
 
 /* =========================
-   MAIN FRAME
+   MAIN FRAME - กลับเป็นกรอบแอปตรงกลางแบบเดิม
    ========================= */
 
 .browserFrame {
   position: relative;
   z-index: 2;
-  width: min(1180px, 100%);
-  margin: 0 auto;
-  border-radius: 30px;
-  background: rgba(255, 255, 255, 0.34);
-  box-shadow: 0 28px 90px rgba(15, 23, 42, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.58);
+  width: min(980px, calc(100vw - 34px));
+  margin: 16px auto 26px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 26px 90px rgba(15, 23, 42, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.48);
   overflow: hidden;
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(8px);
 }
 
 .browserTop {
-  height: 46px;
+  height: 34px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 0 18px;
-  background: rgba(255, 255, 255, 0.72);
+  gap: 12px;
+  padding: 0 16px;
+  background: rgba(239, 249, 255, 0.78);
   border-bottom: 1px solid rgba(148, 163, 184, 0.22);
 }
 
@@ -119,8 +122,8 @@ button {
 }
 
 .browserDots span {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
   border-radius: 999px;
   background: #fb7185;
 }
@@ -135,30 +138,30 @@ button {
 
 .browserUrl {
   flex: 1;
-  height: 28px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: rgba(241, 245, 249, 0.92);
+  background: rgba(255, 255, 255, 0.72);
   color: #64748b;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
 }
 
 .appContainer {
   position: relative;
-  min-height: calc(100vh - 92px);
-  padding: 18px 18px 100px;
+  min-height: calc(100vh - 76px);
+  padding: 20px 34px 106px;
 }
 
 .glassCard,
 .screenCard {
   background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 28px;
-  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
-  backdrop-filter: blur(18px);
+  box-shadow: 0 16px 42px rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(16px);
 }
 
 .topBar {
@@ -166,22 +169,34 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 18px;
+  padding: 18px 22px;
   margin-bottom: 18px;
 }
 
 .brandTitle {
-  font-size: clamp(24px, 3vw, 38px);
+  font-size: clamp(24px, 3vw, 34px);
   font-weight: 950;
   line-height: 1;
   letter-spacing: -0.04em;
-  color: #0f172a;
+  color: #0f6fcf;
+}
+
+.theme-yellow-bunny .brandTitle {
+  color: #a16207;
+}
+
+.theme-red-blockman .brandTitle {
+  color: #b45309;
+}
+
+.theme-blue-sponge .brandTitle {
+  color: #0075bd;
 }
 
 .brandSub {
   margin-top: 7px;
-  color: #475569;
-  font-weight: 700;
+  color: #31577f;
+  font-weight: 800;
   font-size: 14px;
 }
 
@@ -200,12 +215,23 @@ button {
   padding: 10px 14px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(148, 163, 184, 0.24);
+  border: 1px solid rgba(59, 130, 246, 0.22);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 900;
+  font-weight: 950;
+  color: #1e3a8a;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+}
+
+.coinBadge {
+  background: linear-gradient(135deg, #fff7c2, #ffe28a);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #8a4b00;
+}
+
+.rankBadge {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
 }
 
 .avatarBadge {
@@ -219,15 +245,28 @@ button {
 }
 
 .screenCard {
-  padding: clamp(16px, 3vw, 26px);
+  padding: clamp(18px, 3vw, 30px);
 }
 
 .sectionTitle {
-  font-size: clamp(22px, 3vw, 34px);
+  font-size: clamp(28px, 3.2vw, 38px);
   font-weight: 950;
   letter-spacing: -0.04em;
   margin-bottom: 18px;
-  color: #0f172a;
+  text-align: center;
+  color: #0f6fcf;
+}
+
+.theme-yellow-bunny .sectionTitle {
+  color: #a16207;
+}
+
+.theme-red-blockman .sectionTitle {
+  color: #b45309;
+}
+
+.theme-blue-sponge .sectionTitle {
+  color: #0075bd;
 }
 
 /* =========================
@@ -238,6 +277,7 @@ button {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  justify-content: center;
   margin-bottom: 18px;
 }
 
@@ -253,7 +293,7 @@ button {
 .authSwitchBtn {
   border: 0;
   cursor: pointer;
-  font-weight: 900;
+  font-weight: 950;
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease,
@@ -262,49 +302,57 @@ button {
 }
 
 .langBtn {
-  padding: 11px 16px;
-  border-radius: 999px;
-  background: #ffffff;
-  color: #334155;
-  border: 1px solid rgba(148, 163, 184, 0.32);
+  padding: 11px 18px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1d4ed8;
+  border: 1px solid rgba(59, 130, 246, 0.2);
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
 }
 
 .langBtn.active {
-  background: linear-gradient(135deg, #f59e0b, #f97316);
+  background: linear-gradient(135deg, #35b8ff, #0f7de1);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 12px 30px rgba(249, 115, 22, 0.28);
+  box-shadow: 0 12px 30px rgba(14, 165, 233, 0.28);
+}
+
+.langBtn.answer {
+  background: linear-gradient(135deg, #fff4b2, #ffd76c);
+  color: #7c4a00;
 }
 
 .langBtn.answer.active {
-  background: linear-gradient(135deg, #22c55e, #14b8a6);
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  color: #ffffff;
 }
 
 .startLessonBox {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 18px;
-  padding: 14px;
+  width: min(460px, 100%);
+  margin: 0 auto 18px;
+  padding: 16px;
   border-radius: 24px;
-  background: rgba(255, 251, 235, 0.82);
-  border: 1px dashed rgba(245, 158, 11, 0.38);
+  text-align: center;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(59, 130, 246, 0.18);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
 }
 
 .startLessonBox p {
-  margin: 0;
-  color: #92400e;
+  margin: 10px 0 0;
+  color: #31577f;
   font-weight: 800;
+  font-size: 13px;
 }
 
 .startLessonBtn {
-  padding: 13px 22px;
-  border-radius: 999px;
+  padding: 14px 34px;
+  border-radius: 16px;
   color: #ffffff;
-  background: linear-gradient(135deg, #f97316, #f59e0b);
-  box-shadow: 0 12px 28px rgba(249, 115, 22, 0.32);
+  background: linear-gradient(135deg, #48b7ff, #0f7de1);
+  box-shadow: 0 14px 30px rgba(14, 165, 233, 0.3);
   white-space: nowrap;
+  font-size: 18px;
 }
 
 .startLessonBtn:hover,
@@ -328,7 +376,7 @@ button {
   grid-template-columns: auto 1fr auto;
   gap: 18px;
   align-items: center;
-  padding: 18px;
+  padding: 20px;
   margin-bottom: 18px;
   overflow: hidden;
 }
@@ -336,24 +384,28 @@ button {
 .soundIcon {
   width: 74px;
   height: 74px;
-  border-radius: 24px;
+  border-radius: 22px;
   display: grid;
   place-items: center;
   font-size: 38px;
-  background: linear-gradient(135deg, #e0f2fe, #fef3c7);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.78);
+  color: #ffffff;
+  background: linear-gradient(135deg, #59c9ff, #0f7de1);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.78),
+    0 14px 28px rgba(14, 165, 233, 0.24);
 }
 
 .soundText h3 {
   margin: 0 0 5px;
-  font-size: 21px;
+  font-size: 24px;
   font-weight: 950;
+  color: #174b88;
 }
 
 .soundText p {
   margin: 0 0 12px;
-  color: #475569;
-  font-weight: 700;
+  color: #31577f;
+  font-weight: 800;
 }
 
 .hiddenWordPill {
@@ -361,12 +413,12 @@ button {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  padding: 10px 14px;
+  padding: 9px 13px;
   border-radius: 999px;
-  background: rgba(248, 250, 252, 0.94);
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  color: #334155;
-  font-weight: 900;
+  background: #fff3bc;
+  border: 1px solid rgba(245, 158, 11, 0.26);
+  color: #7c4a00;
+  font-weight: 950;
 }
 
 .hiddenWordPill strong {
@@ -379,16 +431,17 @@ button {
 }
 
 .speakButton {
-  padding: 13px 18px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  padding: 16px 24px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #46b6ff, #1d77df);
   color: #ffffff;
-  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.26);
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.28);
   white-space: nowrap;
+  font-size: 18px;
 }
 
 .practiceCard {
-  padding: 18px;
+  padding: 20px;
   margin-bottom: 18px;
 }
 
@@ -401,15 +454,16 @@ button {
 }
 
 .cardTitle {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 950;
-  color: #0f172a;
+  color: #0f4f98;
 }
 
 .cardSub {
   margin: 4px 0 0;
-  color: #64748b;
-  font-weight: 700;
+  color: #31577f;
+  font-weight: 800;
+  font-size: 13px;
 }
 
 .headerActionGroup {
@@ -422,9 +476,10 @@ button {
 .textActionBtn {
   padding: 10px 14px;
   border-radius: 999px;
-  background: #f8fafc;
-  border: 1px solid rgba(148, 163, 184, 0.26);
-  color: #334155;
+  background: rgba(239, 246, 255, 0.94);
+  border: 1px solid rgba(59, 130, 246, 0.14);
+  color: #1d4ed8;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
 }
 
 /* =========================
@@ -434,16 +489,17 @@ button {
 .answerSlots {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 10px;
-  margin: 14px 0;
+  margin: 18px 0 22px;
 }
 
 .answerSlot {
   width: clamp(46px, 8vw, 66px);
   height: clamp(50px, 8vw, 70px);
   border-radius: 18px;
-  background: #ffffff;
-  border: 2px dashed rgba(100, 116, 139, 0.3);
+  background: rgba(255, 255, 255, 0.82);
+  border: 2px dashed rgba(59, 130, 246, 0.42);
   display: grid;
   place-items: center;
   font-size: clamp(24px, 5vw, 36px);
@@ -454,14 +510,14 @@ button {
 
 .letterTrayBox {
   padding: 14px;
-  border-radius: 24px;
-  background: rgba(248, 250, 252, 0.74);
-  border: 1px solid rgba(226, 232, 240, 0.88);
+  border-radius: 22px;
+  background: rgba(239, 249, 255, 0.78);
+  border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 .letterTrayTitle {
-  color: #64748b;
-  font-weight: 900;
+  color: #31577f;
+  font-weight: 950;
   margin-bottom: 10px;
 }
 
@@ -476,14 +532,14 @@ button {
   min-width: 54px;
   height: 54px;
   padding: 0 16px;
-  border-radius: 18px;
-  border: 1px solid rgba(148, 163, 184, 0.34);
-  background: #ffffff;
-  color: #0f172a;
+  border-radius: 14px;
+  border: 1px solid rgba(245, 158, 11, 0.42);
+  background: linear-gradient(135deg, #fff4b2, #ffd86a);
+  color: #694200;
   font-size: 25px;
   font-weight: 950;
   cursor: pointer;
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 22px rgba(245, 158, 11, 0.18);
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease,
@@ -494,7 +550,7 @@ button {
 
 .letterButton:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 14px 28px rgba(245, 158, 11, 0.24);
 }
 
 .letterButton.used,
@@ -505,10 +561,10 @@ button {
 }
 
 .letterButton.active {
-  background: linear-gradient(135deg, #f59e0b, #f97316);
+  background: linear-gradient(135deg, #22c55e, #16a34a);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 14px 32px rgba(249, 115, 22, 0.42);
+  box-shadow: 0 14px 32px rgba(34, 197, 94, 0.36);
   transform: translateY(-3px) scale(1.06);
 }
 
@@ -520,7 +576,7 @@ button {
   width: 23px;
   height: 23px;
   border-radius: 999px;
-  background: #22c55e;
+  background: #f97316;
   color: #ffffff;
   font-size: 14px;
   font-weight: 950;
@@ -528,7 +584,7 @@ button {
   align-items: center;
   justify-content: center;
   border: 2px solid #ffffff;
-  box-shadow: 0 8px 16px rgba(34, 197, 94, 0.3);
+  box-shadow: 0 8px 16px rgba(249, 115, 22, 0.3);
 }
 
 /* =========================
@@ -538,16 +594,16 @@ button {
 .writingPad {
   position: relative;
   width: 100%;
-  height: clamp(220px, 34vw, 360px);
-  border-radius: 26px;
+  height: clamp(230px, 35vw, 360px);
+  border-radius: 22px;
   overflow: hidden;
   background:
-    linear-gradient(transparent 31px, rgba(59, 130, 246, 0.13) 32px),
-    #ffffff;
+    linear-gradient(transparent 31px, rgba(59, 130, 246, 0.18) 32px),
+    rgba(255, 255, 255, 0.92);
   background-size: 100% 46px;
-  border: 2px solid rgba(148, 163, 184, 0.22);
+  border: 2px solid rgba(59, 130, 246, 0.42);
   box-shadow:
-    inset 0 0 0 7px rgba(248, 250, 252, 0.9),
+    inset 0 0 0 7px rgba(248, 250, 252, 0.72),
     0 14px 32px rgba(15, 23, 42, 0.08);
   touch-action: none;
 }
@@ -557,7 +613,7 @@ button {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(248, 113, 113, 0.22) 2px, transparent 2px) 42px 0 / 100% 100%;
+    linear-gradient(90deg, rgba(248, 113, 113, 0.2) 2px, transparent 2px) 42px 0 / 100% 100%;
   z-index: 0;
 }
 
@@ -613,11 +669,11 @@ button {
 
 .resultCard {
   min-height: 190px;
-  padding: 18px;
-  border-radius: 28px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(240, 249, 255, 0.9));
-  border: 1px solid rgba(255, 255, 255, 0.78);
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.1);
+  padding: 22px;
+  border-radius: 24px;
+  background: rgba(239, 246, 255, 0.82);
+  border: 1px solid rgba(59, 130, 246, 0.18);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
 }
 
 .resultCard.success {
@@ -633,15 +689,16 @@ button {
 }
 
 .resultTitle {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 950;
   margin-top: 6px;
+  color: #1e3a8a;
 }
 
 .resultText {
   margin-top: 8px;
-  color: #475569;
-  font-weight: 800;
+  color: #31577f;
+  font-weight: 850;
   line-height: 1.55;
 }
 
@@ -658,28 +715,30 @@ button {
   justify-content: space-between;
   gap: 12px;
   padding: 11px 12px;
-  border-radius: 18px;
+  border-radius: 14px;
   background: rgba(248, 250, 252, 0.92);
-  border: 1px solid rgba(226, 232, 240, 0.88);
+  border: 1px solid rgba(59, 130, 246, 0.16);
 }
 
 .miniStatus span {
-  color: #64748b;
-  font-weight: 800;
+  color: #31577f;
+  font-weight: 850;
 }
 
 .miniStatus strong {
   text-align: right;
   font-weight: 950;
+  color: #1e3a8a;
 }
 
 .checkBtn {
   margin-top: auto;
   padding: 14px 18px;
-  border-radius: 20px;
+  border-radius: 16px;
   color: #ffffff;
-  background: linear-gradient(135deg, #22c55e, #14b8a6);
-  box-shadow: 0 14px 30px rgba(20, 184, 166, 0.26);
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  box-shadow: 0 14px 30px rgba(34, 197, 94, 0.26);
+  font-size: 18px;
 }
 
 .wordNavRow {
@@ -691,10 +750,10 @@ button {
 .smallNavBtn {
   padding: 12px 18px;
   border-radius: 999px;
-  background: #ffffff;
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  color: #334155;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(59, 130, 246, 0.16);
+  color: #1d4ed8;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
 
 /* =========================
@@ -718,7 +777,7 @@ button {
 }
 
 .scoreLabel {
-  color: #64748b;
+  color: #31577f;
   font-weight: 900;
   margin-top: 4px;
 }
@@ -727,6 +786,7 @@ button {
   font-size: clamp(30px, 5vw, 46px);
   font-weight: 950;
   margin-top: 4px;
+  color: #0f4f98;
 }
 
 .scoreMapLayout {
@@ -752,12 +812,13 @@ button {
   margin: 0 0 4px;
   font-size: 21px;
   font-weight: 950;
+  color: #0f4f98;
 }
 
 .mapHeader p {
   margin: 0;
-  color: #64748b;
-  font-weight: 750;
+  color: #31577f;
+  font-weight: 800;
 }
 
 .mapScorePill {
@@ -947,11 +1008,12 @@ button {
   margin-top: 8px;
   font-size: 17px;
   font-weight: 950;
+  color: #0f4f98;
 }
 
 .rewardDesc {
   margin-top: 6px;
-  color: #64748b;
+  color: #31577f;
   font-size: 13px;
   font-weight: 750;
   min-height: 42px;
@@ -962,9 +1024,10 @@ button {
   display: inline-flex;
   padding: 8px 12px;
   border-radius: 999px;
-  background: #f8fafc;
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: #fff7ed;
+  border: 1px solid rgba(251, 146, 60, 0.22);
   font-weight: 950;
+  color: #9a3412;
 }
 
 .rewardBtn {
@@ -1001,13 +1064,13 @@ button {
 
 .profileGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.75fr);
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.85fr);
   gap: 18px;
 }
 
 .profileMain,
 .themePanel {
-  padding: 18px;
+  padding: 20px;
 }
 
 .profileHeader {
@@ -1018,13 +1081,14 @@ button {
 }
 
 .profileAvatarLarge {
-  width: 112px;
-  height: 112px;
-  border-radius: 34px;
+  width: 118px;
+  height: 118px;
+  border-radius: 999px;
   display: grid;
   place-items: center;
-  font-size: 62px;
-  background: linear-gradient(135deg, #e0f2fe, #fef3c7);
+  font-size: 64px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 4px solid rgba(191, 219, 254, 0.95);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.88);
 }
 
@@ -1042,9 +1106,9 @@ button {
 .avatarChoice {
   width: 44px;
   height: 44px;
-  border-radius: 16px;
-  border: 1px solid rgba(148, 163, 184, 0.26);
-  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid rgba(59, 130, 246, 0.24);
+  background: rgba(239, 246, 255, 0.78);
   font-size: 24px;
   cursor: pointer;
 }
@@ -1057,10 +1121,10 @@ button {
 
 .smallHint {
   margin-top: 10px;
-  color: #64748b;
+  color: #31577f;
   font-size: 12px;
   line-height: 1.5;
-  font-weight: 750;
+  font-weight: 800;
 }
 
 .profileForm {
@@ -1071,38 +1135,41 @@ button {
 .profileForm label,
 .authCard label {
   font-weight: 950;
-  color: #334155;
+  color: #1e3a8a;
 }
 
 .profileForm input,
 .authCard input {
   width: 100%;
   min-height: 48px;
-  border-radius: 16px;
-  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 14px;
+  border: 1px solid rgba(59, 130, 246, 0.26);
   background: rgba(255, 255, 255, 0.92);
   padding: 0 14px;
   outline: none;
   font-weight: 800;
+  color: #0f172a;
 }
 
 .profileForm input:focus,
 .authCard input:focus {
-  border-color: #f97316;
-  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.12);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
 }
 
 .saveProfileBtn {
   margin-top: 8px;
-  padding: 13px 18px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  padding: 15px 18px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
   color: #ffffff;
+  box-shadow: 0 14px 28px rgba(34, 197, 94, 0.24);
+  font-size: 18px;
 }
 
 .themeList {
   display: grid;
-  gap: 10px;
+  gap: 14px;
   margin-top: 14px;
 }
 
@@ -1110,28 +1177,57 @@ button {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   padding: 12px;
   border-radius: 22px;
-  border: 1px solid rgba(148, 163, 184, 0.26);
-  background: #ffffff;
+  border: 2px solid rgba(59, 130, 246, 0.12);
+  background: rgba(239, 249, 255, 0.64);
   cursor: pointer;
   text-align: left;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.themeChoice:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.88);
 }
 
 .themeChoice.active {
-  border-color: #f97316;
-  background: linear-gradient(135deg, #fff7ed, #fef3c7);
-  box-shadow: 0 12px 26px rgba(249, 115, 22, 0.18);
+  border-color: #3b82f6;
+  background: rgba(240, 249, 255, 0.94);
+  box-shadow:
+    0 14px 30px rgba(59, 130, 246, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.86);
+}
+
+.themeChoice.active::after {
+  content: "✓";
+  margin-left: auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  font-weight: 950;
+  flex: 0 0 auto;
 }
 
 .themePreview {
-  width: 64px;
-  height: 52px;
-  border-radius: 18px;
+  width: 92px;
+  height: 62px;
+  border-radius: 16px;
   overflow: hidden;
   flex: 0 0 auto;
   background: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
 }
 
 .themeMini {
@@ -1155,13 +1251,14 @@ button {
 
 .themeName {
   font-weight: 950;
+  color: #1e3a8a;
 }
 
 .themeDesc {
   margin-top: 3px;
-  color: #64748b;
+  color: #31577f;
   font-size: 12px;
-  font-weight: 750;
+  font-weight: 800;
 }
 
 /* =========================
@@ -1171,23 +1268,24 @@ button {
 .bottomNav {
   position: fixed;
   left: 50%;
-  bottom: 18px;
+  bottom: 20px;
   z-index: 70;
   transform: translateX(-50%);
-  width: min(760px, calc(100vw - 40px));
+  width: min(900px, calc(100vw - 70px));
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
   padding: 10px;
+  border-radius: 24px;
 }
 
 .navItem {
   min-height: 52px;
   width: 100%;
   border: 0;
-  border-radius: 18px;
+  border-radius: 16px;
   background: transparent;
-  color: #334155;
+  color: #1e3a8a;
   font-weight: 950;
   cursor: pointer;
   transition:
@@ -1199,17 +1297,17 @@ button {
 
 .navItem:hover {
   transform: translateY(-1px);
-  background: rgba(248, 250, 252, 0.78);
+  background: rgba(239, 246, 255, 0.82);
 }
 
 .navItem.active {
-  background: linear-gradient(135deg, #f59e0b, #f97316);
+  background: linear-gradient(135deg, #35b8ff, #0f7de1);
   color: #ffffff;
-  box-shadow: 0 12px 28px rgba(249, 115, 22, 0.28);
+  box-shadow: 0 12px 28px rgba(14, 165, 233, 0.28);
 }
 
 .navItem.logout {
-  color: #dc2626;
+  color: #b91c1c;
 }
 
 .navItem.logout:hover {
@@ -1232,7 +1330,7 @@ button {
   transform: translateX(-50%);
   width: min(86vw, 360px);
   padding: 12px;
-  border-radius: 26px;
+  border-radius: 24px;
   background: rgba(255, 255, 255, 0.97);
   box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
   border: 1px solid rgba(255, 255, 255, 0.78);
@@ -1257,7 +1355,7 @@ button {
   position: relative;
   z-index: 1;
   width: 100%;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border: 1px solid rgba(59, 130, 246, 0.2);
   background: #ffffff;
   border-radius: 18px;
   padding: 14px;
@@ -1280,14 +1378,14 @@ button {
 }
 
 .learnPopupItem:hover {
-  background: linear-gradient(135deg, #fff7ed, #fef3c7);
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
   transform: translateY(-1px);
 }
 
 .learnPopupItem.active {
-  border-color: #f97316;
-  background: linear-gradient(135deg, #fff7ed, #fef3c7);
-  box-shadow: 0 14px 32px rgba(249, 115, 22, 0.18);
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  box-shadow: 0 14px 32px rgba(59, 130, 246, 0.18);
 }
 
 .learnPopupIcon {
@@ -1351,6 +1449,7 @@ button {
   font-size: 34px;
   font-weight: 950;
   letter-spacing: -0.04em;
+  color: #2563eb;
 }
 
 .authSub {
@@ -1393,8 +1492,8 @@ button {
   padding: 14px 18px;
   border-radius: 20px;
   color: #ffffff;
-  background: linear-gradient(135deg, #f59e0b, #f97316);
-  box-shadow: 0 14px 30px rgba(249, 115, 22, 0.28);
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  box-shadow: 0 14px 30px rgba(34, 197, 94, 0.28);
 }
 
 .authError {
@@ -1434,16 +1533,13 @@ button {
    ========================= */
 
 @media (max-width: 980px) {
-  .appShell {
-    padding: 12px;
-  }
-
   .browserFrame {
-    border-radius: 24px;
+    width: min(940px, calc(100vw - 24px));
+    margin-top: 12px;
   }
 
   .appContainer {
-    padding: 14px 14px 96px;
+    padding: 18px 22px 104px;
   }
 
   .scoreMapLayout,
@@ -1470,7 +1566,17 @@ button {
   }
 
   .browserFrame {
-    background: rgba(255, 255, 255, 0.26);
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    border-radius: 0;
+    border: 0;
+    background: rgba(255, 255, 255, 0.22);
+  }
+
+  .appContainer {
+    min-height: 100vh;
+    padding: 12px 12px 96px;
   }
 
   .topBar {
@@ -1507,15 +1613,6 @@ button {
 
   .headerActionGroup .textActionBtn {
     flex: 1;
-  }
-
-  .startLessonBox {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .startLessonBtn {
-    width: 100%;
   }
 
   .scoreTopRow {
@@ -1572,8 +1669,8 @@ button {
     gap: 6px;
     align-content: center;
     justify-content: center;
-    background: linear-gradient(135deg, #f59e0b, #f97316);
-    box-shadow: 0 18px 38px rgba(249, 115, 22, 0.34);
+    background: linear-gradient(135deg, #35b8ff, #0f7de1);
+    box-shadow: 0 18px 38px rgba(14, 165, 233, 0.34);
     cursor: pointer;
   }
 
@@ -1608,29 +1705,14 @@ button {
 }
 
 @media (max-width: 480px) {
-  .appShell {
-    padding: 0;
-  }
-
-  .themeBackdrop {
-    inset: -18px;
-    transform: scale(1.02);
-  }
-
-  .browserFrame {
-    min-height: 100vh;
-    border-radius: 0;
-    border: 0;
-  }
-
-  .appContainer {
-    min-height: 100vh;
-    padding: 12px 12px 96px;
-  }
-
   .screenCard {
     padding: 14px;
     border-radius: 24px;
+  }
+
+  .topBar {
+    padding: 14px;
+    border-radius: 22px;
   }
 
   .brandTitle {
@@ -1697,6 +1779,11 @@ button {
     width: 46px;
     height: 46px;
     font-size: 26px;
+  }
+
+  .themePreview {
+    width: 72px;
+    height: 52px;
   }
 
   .learnPopupMenu {
