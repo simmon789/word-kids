@@ -185,11 +185,6 @@ const REWARD_ITEMS: RewardItem[] = [
 
 const DEFAULT_THEME: ThemeKey = "yellowBunny";
 
-/*
-  จุดคะแนนบน Score Map
-  ปรับจาก 300 คะแนน เหลือ 200 คะแนน
-  1 จุด = 10 คะแนน
-*/
 const SCORE_MAP_POINTS: MapPoint[] = [
   { x: 50, y: 94, label: "START", score: 0 },
   { x: 37, y: 90, label: "10", score: 10 },
@@ -267,6 +262,10 @@ function shuffleArray<T>(items: T[]) {
   }
 
   return arr;
+}
+
+function createWordOrder(length: number) {
+  return shuffleArray(Array.from({ length }, (_, index) => index));
 }
 
 function buildLetterBank(word: string, lang: LangKey) {
@@ -379,6 +378,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabKey>("learn");
   const [language, setLanguage] = useState<LangKey>("en");
   const [wordIndex, setWordIndex] = useState(0);
+  const [wordOrder, setWordOrder] = useState<number[]>(() => createWordOrder(ENGLISH_WORDS.length));
   const [letterBank, setLetterBank] = useState<string[]>([]);
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [feedback, setFeedback] = useState("พร้อมตรวจเมื่อเรียงคำและเขียนเสร็จ");
@@ -393,9 +393,11 @@ function App() {
   const canvasWrapRef = useRef<HTMLDivElement | null>(null);
   const isDrawingRef = useRef(false);
   const hasDrawnRef = useRef(false);
+  const activePointerIdRef = useRef<number | null>(null);
 
   const currentWords = language === "en" ? ENGLISH_WORDS : THAI_WORDS;
-  const currentWord = currentWords[wordIndex] || currentWords[0];
+  const currentWordOrderIndex = wordOrder[wordIndex] ?? 0;
+  const currentWord = currentWords[currentWordOrderIndex] || currentWords[0];
 
   const expectedChars = useMemo(() => {
     return splitChars(normalizeWord(currentWord.text, currentWord.lang));
@@ -414,6 +416,7 @@ function App() {
 
   const myMapPosition = profile ? getMapPosition(profile.coins) : getMapPosition(0);
   const mapMaxScore = SCORE_MAP_POINTS[SCORE_MAP_POINTS.length - 1].score;
+  const lessonProgressText = `${Math.min(wordIndex + 1, wordOrder.length)} / ${wordOrder.length}`;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -510,16 +513,32 @@ function App() {
   }, [currentWord, lessonStarted]);
 
   useEffect(() => {
-    setupCanvas();
+    if (activeTab !== "learn") return undefined;
 
-    const onResize = () => {
-      setupCanvas();
+    const wrap = canvasWrapRef.current;
+
+    const resizeCanvas = () => {
+      window.requestAnimationFrame(() => {
+        setupCanvas();
+      });
     };
 
-    window.addEventListener("resize", onResize);
+    resizeCanvas();
+
+    let resizeObserver: ResizeObserver | null = null;
+
+    if (wrap && "ResizeObserver" in window) {
+      resizeObserver = new ResizeObserver(resizeCanvas);
+      resizeObserver.observe(wrap);
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    window.addEventListener("orientationchange", resizeCanvas);
 
     return () => {
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener("resize", resizeCanvas);
+      window.removeEventListener("orientationchange", resizeCanvas);
+      resizeObserver?.disconnect();
     };
   }, [activeTab]);
 
@@ -562,6 +581,16 @@ function App() {
     );
 
     await upsertPublicProfile(nextProfile);
+  }
+
+  function resetWordRound(nextLanguage: LangKey) {
+    const nextWords = nextLanguage === "en" ? ENGLISH_WORDS : THAI_WORDS;
+
+    setLanguage(nextLanguage);
+    setWordOrder(createWordOrder(nextWords.length));
+    setWordIndex(0);
+    setFeedback("สุ่มคำศัพท์รอบใหม่แล้ว คำที่ออกมาแล้วจะไม่ออกซ้ำในรอบนี้");
+    setCheckState("idle");
   }
 
   function getCurrentAuthName() {
@@ -653,7 +682,7 @@ function App() {
 
   function startLesson() {
     setLessonStarted(true);
-    setFeedback("เริ่มเรียนแล้ว ฟังเสียงแล้วลองเรียงตัวอักษร");
+    setFeedback("เริ่มเรียนแล้ว ระบบสุ่มคำศัพท์ให้แบบไม่ซ้ำในรอบนี้");
     speakWord(currentWord.text, currentWord.lang);
   }
 
@@ -664,10 +693,18 @@ function App() {
     if (!canvas || !wrap) return;
 
     const rect = wrap.getBoundingClientRect();
-    const ratio = window.devicePixelRatio || 1;
 
-    canvas.width = rect.width * ratio;
-    canvas.height = rect.height * ratio;
+    if (rect.width <= 0 || rect.height <= 0) return;
+
+    const ratio = window.devicePixelRatio || 1;
+    const nextWidth = Math.round(rect.width * ratio);
+    const nextHeight = Math.round(rect.height * ratio);
+
+    if (canvas.width !== nextWidth || canvas.height !== nextHeight) {
+      canvas.width = nextWidth;
+      canvas.height = nextHeight;
+    }
+
     canvas.style.width = `${rect.width}px`;
     canvas.style.height = `${rect.height}px`;
 
@@ -675,8 +712,7 @@ function App() {
 
     if (!ctx) return;
 
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(ratio, ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = "#111827";
@@ -698,7 +734,17 @@ function App() {
       return;
     }
 
+    const rect = canvas.getBoundingClientRect();
+
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    if (rect.width > 0 && rect.height > 0) {
+      setupCanvas();
+    }
+
     hasDrawnRef.current = false;
   }
 
@@ -716,10 +762,14 @@ function App() {
   }
 
   function handlePointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
+    event.preventDefault();
+
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
 
     if (!canvas || !ctx) return;
+
+    setupCanvas();
 
     const { x, y } = getPointerPosition(event);
 
@@ -728,6 +778,7 @@ function App() {
 
     isDrawingRef.current = true;
     hasDrawnRef.current = true;
+    activePointerIdRef.current = event.pointerId;
 
     try {
       canvas.setPointerCapture(event.pointerId);
@@ -737,7 +788,10 @@ function App() {
   }
 
   function handlePointerMove(event: React.PointerEvent<HTMLCanvasElement>) {
+    event.preventDefault();
+
     if (!isDrawingRef.current) return;
+    if (activePointerIdRef.current !== null && activePointerIdRef.current !== event.pointerId) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
@@ -751,9 +805,12 @@ function App() {
   }
 
   function handlePointerUp(event: React.PointerEvent<HTMLCanvasElement>) {
+    event.preventDefault();
+
     const canvas = canvasRef.current;
 
     isDrawingRef.current = false;
+    activePointerIdRef.current = null;
 
     try {
       canvas?.releasePointerCapture(event.pointerId);
@@ -782,6 +839,16 @@ function App() {
     setFeedback("ล้างคำแล้ว ลองเรียงใหม่อีกครั้ง");
   }
 
+  function handleNextWord() {
+    if (wordIndex >= wordOrder.length - 1) {
+      setCheckState("success");
+      setFeedback("ครบทุกคำในรอบนี้แล้ว ถ้าต้องการสุ่มใหม่ให้รีเฟรชหน้า หรือเข้าเล่นใหม่อีกครั้ง");
+      return;
+    }
+
+    setWordIndex((prev) => prev + 1);
+  }
+
   async function handleCheckAnswer() {
     if (!profile || !user) return;
 
@@ -803,6 +870,9 @@ function App() {
     if (profile.completedWords.includes(wordKey)) {
       setCheckState("success");
       setFeedback("เก่งมาก! คำนี้เคยได้คะแนนแล้ว แต่ยังฝึกซ้ำได้");
+      window.setTimeout(() => {
+        handleNextWord();
+      }, 900);
       return;
     }
 
@@ -922,14 +992,6 @@ function App() {
       const message = error instanceof Error ? error.message : "แลกรางวัลไม่สำเร็จ";
       alert(message);
     }
-  }
-
-  function handleNextWord() {
-    setWordIndex((prev) => (prev + 1) % currentWords.length);
-  }
-
-  function handlePrevWord() {
-    setWordIndex((prev) => (prev - 1 + currentWords.length) % currentWords.length);
   }
 
   async function handleLogout() {
@@ -1075,10 +1137,7 @@ function App() {
                 <div className="languageTabs">
                   <button
                     className={language === "en" ? "langBtn active" : "langBtn"}
-                    onClick={() => {
-                      setLanguage("en");
-                      setWordIndex(0);
-                    }}
+                    onClick={() => resetWordRound("en")}
                     type="button"
                   >
                     ภาษาอังกฤษ
@@ -1086,10 +1145,7 @@ function App() {
 
                   <button
                     className={language === "th" ? "langBtn active" : "langBtn"}
-                    onClick={() => {
-                      setLanguage("th");
-                      setWordIndex(0);
-                    }}
+                    onClick={() => resetWordRound("th")}
                     type="button"
                   >
                     ภาษาไทย
@@ -1109,7 +1165,7 @@ function App() {
                     <button className="startLessonBtn" onClick={startLesson} type="button">
                       ▶ เริ่มเรียน
                     </button>
-                    <p>กดเริ่มเรียน 1 ครั้ง หลังจากนั้นเมื่อเปลี่ยนคำ ระบบจะอ่านเสียงให้อัตโนมัติ</p>
+                    <p>ระบบจะสุ่มคำศัพท์แบบไม่ซ้ำในรอบการเล่นนี้</p>
                   </div>
                 )}
 
@@ -1127,7 +1183,9 @@ function App() {
                           <span>{currentWord.meaning}</span>
                         </>
                       ) : (
-                        <>คำนี้มี {expectedChars.length} ช่อง</>
+                        <>
+                          คำนี้มี {expectedChars.length} ช่อง • คำที่ {lessonProgressText}
+                        </>
                       )}
                     </div>
                   </div>
@@ -1211,6 +1269,7 @@ function App() {
                       onPointerDown={handlePointerDown}
                       onPointerMove={handlePointerMove}
                       onPointerUp={handlePointerUp}
+                      onPointerCancel={handlePointerUp}
                       onPointerLeave={handlePointerUp}
                     />
 
@@ -1262,10 +1321,6 @@ function App() {
                 </div>
 
                 <div className="wordNavRow">
-                  <button className="smallNavBtn" onClick={handlePrevWord} type="button">
-                    ← คำก่อนหน้า
-                  </button>
-
                   <button className="smallNavBtn" onClick={handleNextWord} type="button">
                     คำถัดไป →
                   </button>
