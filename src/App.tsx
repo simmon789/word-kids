@@ -227,6 +227,10 @@ function normalizeLoginName(value: string) {
   return value.trim().replace(/\s+/g, "").toLowerCase();
 }
 
+function isEnglishOnlyName(value: string) {
+  return /^[A-Za-z0-9_-]+$/.test(value.trim());
+}
+
 function createHiddenEmailFromName(name: string) {
   const normalized = normalizeLoginName(name);
   let hash = 0;
@@ -319,7 +323,7 @@ function getMapPosition(score: number) {
 
 function createDefaultProfile(currentUser: User): UserProfile {
   const email = currentUser.email || "";
-  const fallbackName = email ? email.split("@")[0] : "เด็กน้อย";
+  const fallbackName = email ? email.split("@")[0] : "kid";
 
   return {
     uid: currentUser.uid,
@@ -364,7 +368,7 @@ function App() {
 
   const [registerName, setRegisterName] = useState("");
   const [registerClassName, setRegisterClassName] = useState("ป.1/1");
-  const [loginName, setLoginName] = useState("น้องเจ");
+  const [loginName, setLoginName] = useState("jay");
   const [password, setPassword] = useState("123456");
   const [authError, setAuthError] = useState("");
 
@@ -465,7 +469,7 @@ function App() {
 
         return {
           uid: item.id,
-          name: data.name || "เด็กน้อย",
+          name: data.name || "kid",
           className: data.className || "",
           coins: Number(data.coins || 0),
           totalCorrect: Number(data.totalCorrect || 0),
@@ -572,6 +576,11 @@ function App() {
         return;
       }
 
+      if (!isEnglishOnlyName(currentName)) {
+        setAuthError("กรุณาใช้ชื่อภาษาอังกฤษเท่านั้น เช่น jay, plawan, tongkla");
+        return;
+      }
+
       if (password.length < 6) {
         setAuthError("รหัสผ่านต้องมีอย่างน้อย 6 ตัว");
         return;
@@ -594,7 +603,7 @@ function App() {
       const newProfile: UserProfile = {
         uid: credential.user.uid,
         email: hiddenEmail,
-        loginName: currentName.trim(),
+        loginName: normalizedName,
         name: currentName.trim(),
         className: registerClassName.trim() || "ป.1/1",
         coins: 0,
@@ -979,11 +988,11 @@ function App() {
 
           {authMode === "register" ? (
             <>
-              <label>ชื่อเด็ก</label>
+              <label>ชื่อเด็ก ภาษาอังกฤษ</label>
               <input
                 value={registerName}
                 onChange={(e) => setRegisterName(e.target.value)}
-                placeholder="เช่น น้องเจ"
+                placeholder="เช่น jay"
               />
 
               <label>ห้องเรียน</label>
@@ -995,11 +1004,11 @@ function App() {
             </>
           ) : (
             <>
-              <label>ชื่อเด็ก</label>
+              <label>ชื่อเด็ก ภาษาอังกฤษ</label>
               <input
                 value={loginName}
                 onChange={(e) => setLoginName(e.target.value)}
-                placeholder="เช่น น้องเจ"
+                placeholder="เช่น jay"
               />
             </>
           )}
@@ -1014,9 +1023,11 @@ function App() {
           </button>
 
           <div className="authHint">
-            ใช้เฉพาะชื่อเด็กและรหัสผ่านเท่านั้น ไม่ต้องกรอก Email
+            ใช้ชื่อภาษาอังกฤษและรหัสผ่านเท่านั้น ไม่ต้องกรอก Email
             <br />
-            ถ้าชื่อซ้ำ ระบบจะแจ้งเตือนให้เปลี่ยนชื่อใหม่
+            ตัวอย่างชื่อที่ใช้ได้: jay, plawan, tongkla
+            <br />
+            ใช้ได้เฉพาะ A-Z, a-z, 0-9, _ และ -
           </div>
         </div>
       </div>
