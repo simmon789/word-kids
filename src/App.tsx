@@ -25,7 +25,7 @@ import { auth, db } from "./firebase";
 
 type ThemeKey = "yellowBunny" | "redBlockman" | "blueSponge";
 type LangKey = "en" | "th";
-type TabKey = "learn" | "score" | "shop" | "profile";
+type TabKey = "learn" | "thaiLetters" | "score" | "shop" | "profile";
 type AuthMode = "login" | "register";
 type CheckState = "idle" | "success" | "error";
 
@@ -34,6 +34,15 @@ interface WordItem {
   text: string;
   meaning: string;
   lang: LangKey;
+}
+
+interface ThaiLetterItem {
+  id: string;
+  letter: string;
+  sound: string;
+  word: string;
+  emoji: string;
+  hint: string;
 }
 
 interface UserProfile {
@@ -114,6 +123,53 @@ const THAI_WORDS: WordItem[] = [
   { id: "th-18", text: "คิด", meaning: "คิด", lang: "th" },
   { id: "th-19", text: "งา", meaning: "งา", lang: "th" },
   { id: "th-20", text: "งวง", meaning: "งวง", lang: "th" },
+];
+
+const THAI_LETTERS: ThaiLetterItem[] = [
+  { id: "letter-ก", letter: "ก", sound: "กอ ไก่", word: "ไก่", emoji: "🐔", hint: "ไก่ ขึ้นต้นด้วย ก" },
+  { id: "letter-ข", letter: "ข", sound: "ขอ ไข่", word: "ไข่", emoji: "🥚", hint: "ไข่ ขึ้นต้นด้วย ข" },
+  { id: "letter-ฃ", letter: "ฃ", sound: "ฃอ ขวด", word: "ขวด", emoji: "🍼", hint: "ขวด ใช้จำตัว ฃ" },
+  { id: "letter-ค", letter: "ค", sound: "คอ ควาย", word: "ควาย", emoji: "🐃", hint: "ควาย ขึ้นต้นด้วย ค" },
+  { id: "letter-ฅ", letter: "ฅ", sound: "ฅอ คน", word: "คน", emoji: "🧍", hint: "คน ใช้จำตัว ฅ" },
+  { id: "letter-ฆ", letter: "ฆ", sound: "ฆอ ระฆัง", word: "ระฆัง", emoji: "🔔", hint: "ระฆัง ใช้จำตัว ฆ" },
+  { id: "letter-ง", letter: "ง", sound: "งอ งู", word: "งู", emoji: "🐍", hint: "งู ขึ้นต้นด้วย ง" },
+  { id: "letter-จ", letter: "จ", sound: "จอ จาน", word: "จาน", emoji: "🍽️", hint: "จาน ขึ้นต้นด้วย จ" },
+  { id: "letter-ฉ", letter: "ฉ", sound: "ฉอ ฉิ่ง", word: "ฉิ่ง", emoji: "🎶", hint: "ฉิ่ง ขึ้นต้นด้วย ฉ" },
+  { id: "letter-ช", letter: "ช", sound: "ชอ ช้าง", word: "ช้าง", emoji: "🐘", hint: "ช้าง ขึ้นต้นด้วย ช" },
+  { id: "letter-ซ", letter: "ซ", sound: "ซอ โซ่", word: "โซ่", emoji: "⛓️", hint: "โซ่ ใช้จำตัว ซ" },
+  { id: "letter-ฌ", letter: "ฌ", sound: "ฌอ เฌอ", word: "เฌอ", emoji: "🌳", hint: "เฌอ หมายถึงต้นไม้ ใช้จำตัว ฌ" },
+  { id: "letter-ญ", letter: "ญ", sound: "ญอ หญิง", word: "หญิง", emoji: "👧", hint: "หญิง ใช้จำตัว ญ" },
+  { id: "letter-ฎ", letter: "ฎ", sound: "ฎอ ชฎา", word: "ชฎา", emoji: "👑", hint: "ชฎา ใช้จำตัว ฎ" },
+  { id: "letter-ฏ", letter: "ฏ", sound: "ฏอ ปฏัก", word: "ปฏัก", emoji: "🪄", hint: "ปฏัก ใช้จำตัว ฏ" },
+  { id: "letter-ฐ", letter: "ฐ", sound: "ฐอ ฐาน", word: "ฐาน", emoji: "🏛️", hint: "ฐาน ใช้จำตัว ฐ" },
+  { id: "letter-ฑ", letter: "ฑ", sound: "ฑอ มณโฑ", word: "มณโฑ", emoji: "👸", hint: "มณโฑ ใช้จำตัว ฑ" },
+  { id: "letter-ฒ", letter: "ฒ", sound: "ฒอ ผู้เฒ่า", word: "ผู้เฒ่า", emoji: "👴", hint: "ผู้เฒ่า ใช้จำตัว ฒ" },
+  { id: "letter-ณ", letter: "ณ", sound: "ณอ เณร", word: "เณร", emoji: "🧑‍🦲", hint: "เณร ใช้จำตัว ณ" },
+  { id: "letter-ด", letter: "ด", sound: "ดอ เด็ก", word: "เด็ก", emoji: "🧒", hint: "เด็ก ขึ้นต้นด้วย ด" },
+  { id: "letter-ต", letter: "ต", sound: "ตอ เต่า", word: "เต่า", emoji: "🐢", hint: "เต่า ขึ้นต้นด้วย ต" },
+  { id: "letter-ถ", letter: "ถ", sound: "ถอ ถุง", word: "ถุง", emoji: "🛍️", hint: "ถุง ขึ้นต้นด้วย ถ" },
+  { id: "letter-ท", letter: "ท", sound: "ทอ ทหาร", word: "ทหาร", emoji: "🪖", hint: "ทหาร ขึ้นต้นด้วย ท" },
+  { id: "letter-ธ", letter: "ธ", sound: "ธอ ธง", word: "ธง", emoji: "🚩", hint: "ธง ขึ้นต้นด้วย ธ" },
+  { id: "letter-น", letter: "น", sound: "นอ หนู", word: "หนู", emoji: "🐭", hint: "หนู ใช้จำตัว น" },
+  { id: "letter-บ", letter: "บ", sound: "บอ ใบไม้", word: "ใบไม้", emoji: "🍃", hint: "ใบไม้ ขึ้นต้นด้วย บ" },
+  { id: "letter-ป", letter: "ป", sound: "ปอ ปลา", word: "ปลา", emoji: "🐟", hint: "ปลา ขึ้นต้นด้วย ป" },
+  { id: "letter-ผ", letter: "ผ", sound: "ผอ ผึ้ง", word: "ผึ้ง", emoji: "🐝", hint: "ผึ้ง ขึ้นต้นด้วย ผ" },
+  { id: "letter-ฝ", letter: "ฝ", sound: "ฝอ ฝา", word: "ฝา", emoji: "🧢", hint: "ฝา ขึ้นต้นด้วย ฝ" },
+  { id: "letter-พ", letter: "พ", sound: "พอ พาน", word: "พาน", emoji: "🏵️", hint: "พาน ขึ้นต้นด้วย พ" },
+  { id: "letter-ฟ", letter: "ฟ", sound: "ฟอ ฟัน", word: "ฟัน", emoji: "🦷", hint: "ฟัน ขึ้นต้นด้วย ฟ" },
+  { id: "letter-ภ", letter: "ภ", sound: "ภอ สำเภา", word: "สำเภา", emoji: "⛵", hint: "สำเภา ใช้จำตัว ภ" },
+  { id: "letter-ม", letter: "ม", sound: "มอ ม้า", word: "ม้า", emoji: "🐴", hint: "ม้า ขึ้นต้นด้วย ม" },
+  { id: "letter-ย", letter: "ย", sound: "ยอ ยักษ์", word: "ยักษ์", emoji: "👹", hint: "ยักษ์ ขึ้นต้นด้วย ย" },
+  { id: "letter-ร", letter: "ร", sound: "รอ เรือ", word: "เรือ", emoji: "🚤", hint: "เรือ ขึ้นต้นด้วย ร" },
+  { id: "letter-ล", letter: "ล", sound: "ลอ ลิง", word: "ลิง", emoji: "🐒", hint: "ลิง ขึ้นต้นด้วย ล" },
+  { id: "letter-ว", letter: "ว", sound: "วอ แหวน", word: "แหวน", emoji: "💍", hint: "แหวน ใช้จำตัว ว" },
+  { id: "letter-ศ", letter: "ศ", sound: "ศอ ศาลา", word: "ศาลา", emoji: "🏠", hint: "ศาลา ใช้จำตัว ศ" },
+  { id: "letter-ษ", letter: "ษ", sound: "ษอ ฤาษี", word: "ฤาษี", emoji: "🧙", hint: "ฤาษี ใช้จำตัว ษ" },
+  { id: "letter-ส", letter: "ส", sound: "สอ เสือ", word: "เสือ", emoji: "🐯", hint: "เสือ ขึ้นต้นด้วย ส" },
+  { id: "letter-ห", letter: "ห", sound: "หอ หีบ", word: "หีบ", emoji: "📦", hint: "หีบ ขึ้นต้นด้วย ห" },
+  { id: "letter-ฬ", letter: "ฬ", sound: "ฬอ จุฬา", word: "จุฬา", emoji: "🪁", hint: "จุฬา ใช้จำตัว ฬ" },
+  { id: "letter-อ", letter: "อ", sound: "ออ อ่าง", word: "อ่าง", emoji: "🛁", hint: "อ่าง ขึ้นต้นด้วย อ" },
+  { id: "letter-ฮ", letter: "ฮ", sound: "ฮอ นกฮูก", word: "นกฮูก", emoji: "🦉", hint: "นกฮูก ใช้จำตัว ฮ" },
 ];
 
 const THEME_OPTIONS: {
@@ -286,8 +342,18 @@ function buildLetterBank(word: string, lang: LangKey) {
   return shuffleArray([...answerChars, ...extras]);
 }
 
+function buildThaiLetterOptions(correctLetter: string) {
+  const distractors = THAI_LETTERS.map((item) => item.letter).filter((letter) => letter !== correctLetter);
+  const shuffled = shuffleArray(distractors).slice(0, 3);
+  return shuffleArray([correctLetter, ...shuffled]);
+}
+
 function getWordKey(item: WordItem) {
   return `${item.lang}:${item.id}:${normalizeWord(item.text, item.lang)}`;
+}
+
+function getThaiLetterKey(item: ThaiLetterItem) {
+  return `thai-letter:${item.letter}`;
 }
 
 function getMapPosition(score: number) {
@@ -385,9 +451,19 @@ function App() {
   const [checkState, setCheckState] = useState<CheckState>("idle");
   const [showAnswer, setShowAnswer] = useState(false);
   const [lessonStarted, setLessonStarted] = useState(false);
+
+  const [thaiLetterIndex, setThaiLetterIndex] = useState(0);
+  const [thaiLetterOrder, setThaiLetterOrder] = useState<number[]>(() => createWordOrder(THAI_LETTERS.length));
+  const [thaiLetterOptions, setThaiLetterOptions] = useState<string[]>([]);
+  const [selectedThaiLetter, setSelectedThaiLetter] = useState("");
+  const [showThaiLetterAnswer, setShowThaiLetterAnswer] = useState(false);
+  const [thaiLetterStarted, setThaiLetterStarted] = useState(false);
+  const [thaiLetterFeedback, setThaiLetterFeedback] = useState("ฟังเสียง ดูภาพ แล้วลองคิดว่าต้องเขียนตัวอะไร");
+
   const [leaderboard, setLeaderboard] = useState<PublicProfile[]>([]);
   const [savingProfile, setSavingProfile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [drawVersion, setDrawVersion] = useState(0);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const canvasWrapRef = useRef<HTMLDivElement | null>(null);
@@ -398,6 +474,9 @@ function App() {
   const currentWords = language === "en" ? ENGLISH_WORDS : THAI_WORDS;
   const currentWordOrderIndex = wordOrder[wordIndex] ?? 0;
   const currentWord = currentWords[currentWordOrderIndex] || currentWords[0];
+
+  const currentThaiLetterOrderIndex = thaiLetterOrder[thaiLetterIndex] ?? 0;
+  const currentThaiLetter = THAI_LETTERS[currentThaiLetterOrderIndex] || THAI_LETTERS[0];
 
   const expectedChars = useMemo(() => {
     return splitChars(normalizeWord(currentWord.text, currentWord.lang));
@@ -417,6 +496,7 @@ function App() {
   const myMapPosition = profile ? getMapPosition(profile.coins) : getMapPosition(0);
   const mapMaxScore = SCORE_MAP_POINTS[SCORE_MAP_POINTS.length - 1].score;
   const lessonProgressText = `${Math.min(wordIndex + 1, wordOrder.length)} / ${wordOrder.length}`;
+  const thaiLetterProgressText = `${Math.min(thaiLetterIndex + 1, thaiLetterOrder.length)} / ${thaiLetterOrder.length}`;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -501,7 +581,7 @@ function App() {
     setShowAnswer(false);
     clearCanvas();
 
-    if (lessonStarted) {
+    if (lessonStarted && activeTab === "learn") {
       const timer = window.setTimeout(() => {
         speakWord(currentWord.text, currentWord.lang);
       }, 350);
@@ -513,7 +593,26 @@ function App() {
   }, [currentWord, lessonStarted]);
 
   useEffect(() => {
-    if (activeTab !== "learn") return undefined;
+    setThaiLetterOptions(buildThaiLetterOptions(currentThaiLetter.letter));
+    setSelectedThaiLetter("");
+    setShowThaiLetterAnswer(false);
+    setThaiLetterFeedback("ฟังเสียง ดูภาพ แล้วลองคิดว่าต้องเขียนตัวอะไร");
+    setCheckState("idle");
+    clearCanvas();
+
+    if (thaiLetterStarted && activeTab === "thaiLetters") {
+      const timer = window.setTimeout(() => {
+        speakWord(`${currentThaiLetter.sound} ${currentThaiLetter.word}`, "th");
+      }, 350);
+
+      return () => window.clearTimeout(timer);
+    }
+
+    return undefined;
+  }, [currentThaiLetter, thaiLetterStarted]);
+
+  useEffect(() => {
+    if (activeTab !== "learn" && activeTab !== "thaiLetters") return undefined;
 
     const wrap = canvasWrapRef.current;
 
@@ -591,6 +690,16 @@ function App() {
     setWordIndex(0);
     setFeedback("สุ่มคำศัพท์รอบใหม่แล้ว คำที่ออกมาแล้วจะไม่ออกซ้ำในรอบนี้");
     setCheckState("idle");
+  }
+
+  function resetThaiLetterRound() {
+    setThaiLetterOrder(createWordOrder(THAI_LETTERS.length));
+    setThaiLetterIndex(0);
+    setSelectedThaiLetter("");
+    setShowThaiLetterAnswer(false);
+    setThaiLetterFeedback("เริ่มสุ่ม ก-ฮ รอบใหม่แล้ว ตัวที่ออกมาแล้วจะไม่ออกซ้ำในรอบนี้");
+    setCheckState("idle");
+    clearCanvas();
   }
 
   function getCurrentAuthName() {
@@ -674,7 +783,7 @@ function App() {
 
     const speech = new SpeechSynthesisUtterance(text);
     speech.lang = lang === "en" ? "en-US" : "th-TH";
-    speech.rate = lang === "en" ? 0.82 : 0.9;
+    speech.rate = lang === "en" ? 0.82 : 0.86;
     speech.pitch = 1;
 
     window.speechSynthesis.speak(speech);
@@ -684,6 +793,12 @@ function App() {
     setLessonStarted(true);
     setFeedback("เริ่มเรียนแล้ว ระบบสุ่มคำศัพท์ให้แบบไม่ซ้ำในรอบนี้");
     speakWord(currentWord.text, currentWord.lang);
+  }
+
+  function startThaiLetterLesson() {
+    setThaiLetterStarted(true);
+    setThaiLetterFeedback("เริ่มฝึก ก-ฮ แล้ว ฟังเสียง ดูภาพ แล้วเขียนตัวอักษรเอง");
+    speakWord(`${currentThaiLetter.sound} ${currentThaiLetter.word}`, "th");
   }
 
   function setupCanvas() {
@@ -724,6 +839,7 @@ function App() {
 
     if (!canvas) {
       hasDrawnRef.current = false;
+      setDrawVersion((prev) => prev + 1);
       return;
     }
 
@@ -731,21 +847,19 @@ function App() {
 
     if (!ctx) {
       hasDrawnRef.current = false;
+      setDrawVersion((prev) => prev + 1);
       return;
     }
-
-    const rect = canvas.getBoundingClientRect();
 
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
 
-    if (rect.width > 0 && rect.height > 0) {
-      setupCanvas();
-    }
+    setupCanvas();
 
     hasDrawnRef.current = false;
+    setDrawVersion((prev) => prev + 1);
   }
 
   function getPointerPosition(event: React.PointerEvent<HTMLCanvasElement>) {
@@ -779,6 +893,7 @@ function App() {
     isDrawingRef.current = true;
     hasDrawnRef.current = true;
     activePointerIdRef.current = event.pointerId;
+    setDrawVersion((prev) => prev + 1);
 
     try {
       canvas.setPointerCapture(event.pointerId);
@@ -811,6 +926,7 @@ function App() {
 
     isDrawingRef.current = false;
     activePointerIdRef.current = null;
+    setDrawVersion((prev) => prev + 1);
 
     try {
       canvas?.releasePointerCapture(event.pointerId);
@@ -849,34 +965,24 @@ function App() {
     setWordIndex((prev) => prev + 1);
   }
 
-  async function handleCheckAnswer() {
-    if (!profile || !user) return;
-
-    const expected = normalizeWord(currentWord.text, currentWord.lang);
-    const wordKey = getWordKey(currentWord);
-
-    if (!hasDrawnRef.current) {
-      setCheckState("error");
-      setFeedback("ต้องลองเขียนคำนี้ในช่องก่อน แล้วค่อยตรวจคำตอบ");
-      return;
-    }
-
-    if (normalizedSelectedText !== expected) {
-      setCheckState("error");
-      setFeedback("เรียงตัวอักษรยังไม่ถูก ลองฟังเสียงซ้ำ แล้วเรียงใหม่อีกครั้ง");
-      return;
-    }
-
-    if (profile.completedWords.includes(wordKey)) {
+  function handleNextThaiLetter() {
+    if (thaiLetterIndex >= thaiLetterOrder.length - 1) {
       setCheckState("success");
-      setFeedback("เก่งมาก! คำนี้เคยได้คะแนนแล้ว แต่ยังฝึกซ้ำได้");
-      window.setTimeout(() => {
-        handleNextWord();
-      }, 900);
+      setThaiLetterFeedback("ครบ ก-ฮ ทุกตัวในรอบนี้แล้ว กดสุ่มรอบใหม่เพื่อเริ่มฝึกใหม่");
       return;
     }
 
-    const nextCompletedWords = [...profile.completedWords, wordKey];
+    setThaiLetterIndex((prev) => prev + 1);
+  }
+
+  async function addOnePointForKey(key: string) {
+    if (!profile || !user) return false;
+
+    if (profile.completedWords.includes(key)) {
+      return false;
+    }
+
+    const nextCompletedWords = [...profile.completedWords, key];
     const nextCoins = profile.coins + 1;
     const nextTotalCorrect = profile.totalCorrect + 1;
 
@@ -897,12 +1003,72 @@ function App() {
     setProfile(nextProfile);
     await upsertPublicProfile(nextProfile);
 
+    return true;
+  }
+
+  async function handleCheckAnswer() {
+    if (!profile || !user) return;
+
+    const expected = normalizeWord(currentWord.text, currentWord.lang);
+    const wordKey = getWordKey(currentWord);
+
+    if (!hasDrawnRef.current) {
+      setCheckState("error");
+      setFeedback("ต้องลองเขียนคำนี้ในช่องก่อน แล้วค่อยตรวจคำตอบ");
+      return;
+    }
+
+    if (normalizedSelectedText !== expected) {
+      setCheckState("error");
+      setFeedback("เรียงตัวอักษรยังไม่ถูก ลองฟังเสียงซ้ำ แล้วเรียงใหม่อีกครั้ง");
+      return;
+    }
+
+    const gotPoint = await addOnePointForKey(wordKey);
+
     setCheckState("success");
-    setFeedback("ถูกต้อง! ได้ 1 คะแนน 🎉");
+    setFeedback(gotPoint ? "ถูกต้อง! ได้ 1 คะแนน 🎉" : "เก่งมาก! คำนี้เคยได้คะแนนแล้ว แต่ยังฝึกซ้ำได้");
 
     window.setTimeout(() => {
       handleNextWord();
     }, 1100);
+  }
+
+  async function handleCheckThaiLetter() {
+    if (!profile || !user) return;
+
+    if (!selectedThaiLetter) {
+      setCheckState("error");
+      setThaiLetterFeedback("ลองเลือกตัวอักษรก่อน แล้วค่อยเขียนลงกระดาน");
+      return;
+    }
+
+    if (selectedThaiLetter !== currentThaiLetter.letter) {
+      setCheckState("error");
+      setThaiLetterFeedback(`ยังไม่ถูกนะ ลองฟังเสียงอีกครั้ง: ${currentThaiLetter.sound}`);
+      return;
+    }
+
+    if (!hasDrawnRef.current) {
+      setCheckState("error");
+      setThaiLetterFeedback("เลือกถูกแล้ว เหลือเขียนตัวอักษรลงบนกระดานก่อน");
+      return;
+    }
+
+    const key = getThaiLetterKey(currentThaiLetter);
+    const gotPoint = await addOnePointForKey(key);
+
+    setCheckState("success");
+    setShowThaiLetterAnswer(true);
+    setThaiLetterFeedback(
+      gotPoint
+        ? `เก่งมาก! คำตอบคือ ${currentThaiLetter.letter} ได้ 1 คะแนน ⭐`
+        : `ถูกต้อง! ตัว ${currentThaiLetter.letter} เคยได้คะแนนแล้ว แต่ยังฝึกซ้ำได้`
+    );
+
+    window.setTimeout(() => {
+      handleNextThaiLetter();
+    }, 1300);
   }
 
   async function handleThemeChange(theme: ThemeKey) {
@@ -1014,6 +1180,10 @@ function App() {
   function openTab(tab: TabKey) {
     setActiveTab(tab);
     setMobileMenuOpen(false);
+
+    window.setTimeout(() => {
+      setupCanvas();
+    }, 80);
   }
 
   if (authLoading || profileLoading) {
@@ -1119,7 +1289,7 @@ function App() {
           <header className="topBar glassCard">
             <div>
               <div className="brandTitle">Word Star Kids</div>
-              <div className="brandSub">เรียนคำศัพท์ • สนุกทุกวัน • เก่งขึ้นทุกวัน</div>
+              <div className="brandSub">เรียนคำศัพท์ • ฝึกเขียน ก-ฮ • เก็บคะแนน</div>
             </div>
 
             <div className="topBarRight">
@@ -1323,6 +1493,196 @@ function App() {
                 <div className="wordNavRow">
                   <button className="smallNavBtn" onClick={handleNextWord} type="button">
                     คำถัดไป →
+                  </button>
+                </div>
+              </section>
+            )}
+
+            {activeTab === "thaiLetters" && (
+              <section className="screenCard lessonScreen">
+                <div className="sectionTitle">ฝึกเขียน ก-ฮ จากความจำ</div>
+
+                <div className="languageTabs">
+                  <button className="langBtn active" onClick={resetThaiLetterRound} type="button">
+                    สุ่ม ก-ฮ รอบใหม่
+                  </button>
+
+                  <button
+                    className={showThaiLetterAnswer ? "langBtn answer active" : "langBtn answer"}
+                    onClick={() => setShowThaiLetterAnswer((prev) => !prev)}
+                    type="button"
+                  >
+                    {showThaiLetterAnswer ? "ซ่อนเฉลย" : "ดูเฉลย"}
+                  </button>
+                </div>
+
+                {!thaiLetterStarted && (
+                  <div className="startLessonBox">
+                    <button className="startLessonBtn" onClick={startThaiLetterLesson} type="button">
+                      ▶ เริ่มฝึก ก-ฮ
+                    </button>
+                    <p>เด็กจะได้ฟังเสียง ดูภาพ คิดคำตอบ แล้วเขียนตัวอักษรเอง</p>
+                  </div>
+                )}
+
+                <div className="soundHero glassCard">
+                  <div className="soundIcon">{currentThaiLetter.emoji}</div>
+
+                  <div className="soundText">
+                    <h3>โจทย์ ก-ฮ</h3>
+                    <p>
+                      ฟังเสียง “{currentThaiLetter.sound}” แล้วคิดว่าเป็นตัวอะไร จากนั้นเลือกคำตอบและเขียนเอง
+                    </p>
+
+                    <div className="hiddenWordPill">
+                      {showThaiLetterAnswer ? (
+                        <>
+                          <strong>{currentThaiLetter.letter}</strong>
+                          <span>
+                            {currentThaiLetter.sound} • {currentThaiLetter.hint}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          ภาพช่วยจำ: {currentThaiLetter.emoji} {currentThaiLetter.word} • ตัวที่ {thaiLetterProgressText}
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    className="speakButton"
+                    onClick={() => speakWord(`${currentThaiLetter.sound} ${currentThaiLetter.word}`, "th")}
+                    type="button"
+                  >
+                    ฟังเสียงซ้ำ
+                  </button>
+                </div>
+
+                <div className="practiceCard glassCard">
+                  <div className="cardHeaderRow">
+                    <div>
+                      <div className="cardTitle">1) เลือกตัวอักษรที่คิดว่าใช่</div>
+                      <p className="cardSub">เลือกจากตัวเลือก แล้วค่อยเขียนลงกระดาน</p>
+                    </div>
+                  </div>
+
+                  <div className="letterTrayBox">
+                    <div className="letterTrayTitle">ตัวเลือก</div>
+
+                    <div className="letterTray">
+                      {thaiLetterOptions.map((letter) => (
+                        <button
+                          key={letter}
+                          className={selectedThaiLetter === letter ? "letterButton active" : "letterButton"}
+                          onClick={() => {
+                            setSelectedThaiLetter(letter);
+                            setCheckState("idle");
+                            setThaiLetterFeedback("เลือกแล้ว ต่อไปลองเขียนตัวอักษรนี้ลงบนกระดาน");
+                          }}
+                          type="button"
+                        >
+                          {letter}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="practiceCard glassCard">
+                  <div className="cardHeaderRow">
+                    <div>
+                      <div className="cardTitle">2) เขียนตัวอักษรเอง</div>
+                      <p className="cardSub">ให้เด็กนึกเส้นเอง แล้วเขียนลงกระดาน</p>
+                    </div>
+
+                    <button className="textActionBtn" onClick={clearCanvas} type="button">
+                      ล้างกระดาน
+                    </button>
+                  </div>
+
+                  <div className="writingPad" ref={canvasWrapRef}>
+                    <div className="writingLines" />
+
+                    {showThaiLetterAnswer && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "clamp(90px, 22vw, 190px)",
+                          fontWeight: 900,
+                          color: "rgba(15, 23, 42, 0.09)",
+                          pointerEvents: "none",
+                          zIndex: 1,
+                        }}
+                      >
+                        {currentThaiLetter.letter}
+                      </div>
+                    )}
+
+                    <canvas
+                      ref={canvasRef}
+                      className="writingCanvas"
+                      onPointerDown={handlePointerDown}
+                      onPointerMove={handlePointerMove}
+                      onPointerUp={handlePointerUp}
+                      onPointerCancel={handlePointerUp}
+                      onPointerLeave={handlePointerUp}
+                    />
+
+                    <div className="pencilIcon">✏️</div>
+                  </div>
+                </div>
+
+                <div className="bottomPracticeGrid">
+                  <div
+                    className={
+                      checkState === "success"
+                        ? "resultCard success"
+                        : checkState === "error"
+                          ? "resultCard error"
+                          : "resultCard"
+                    }
+                  >
+                    <div className="resultEmoji">
+                      {checkState === "success" ? "⭐" : checkState === "error" ? "🙂" : "✨"}
+                    </div>
+
+                    <div className="resultTitle">
+                      {checkState === "success" ? "ยอดเยี่ยม!" : checkState === "error" ? "ลองอีกครั้ง" : "พร้อมตรวจ"}
+                    </div>
+
+                    <div className="resultText">{thaiLetterFeedback}</div>
+                  </div>
+
+                  <div className="checkPanel glassCard">
+                    <div className="miniStatus">
+                      <span>เลือกคำตอบ</span>
+                      <strong>{selectedThaiLetter || "ยังไม่ได้เลือก"}</strong>
+                    </div>
+
+                    <div className="miniStatus">
+                      <span>เขียนแล้ว</span>
+                      <strong>{hasDrawnRef.current ? "เขียนแล้ว" : "ยังไม่ได้เขียน"}</strong>
+                    </div>
+
+                    <div className="miniStatus">
+                      <span>รอบนี้</span>
+                      <strong>{thaiLetterProgressText}</strong>
+                    </div>
+
+                    <button className="checkBtn" onClick={handleCheckThaiLetter} type="button">
+                      ตรวจ ก-ฮ
+                    </button>
+                  </div>
+                </div>
+
+                <div className="wordNavRow">
+                  <button className="smallNavBtn" onClick={handleNextThaiLetter} type="button">
+                    ตัวถัดไป →
                   </button>
                 </div>
               </section>
@@ -1576,6 +1936,14 @@ function App() {
               type="button"
             >
               📘 เรียน
+            </button>
+
+            <button
+              className={activeTab === "thaiLetters" ? "navItem active" : "navItem"}
+              onClick={() => openTab("thaiLetters")}
+              type="button"
+            >
+              ✍️ ก-ฮ
             </button>
 
             <button
