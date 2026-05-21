@@ -41,11 +41,6 @@ button {
 
 /* =========================
    THEME BACKGROUND
-   ใช้รูปใน public/themes/
-   ชื่อไฟล์จริง:
-   theme-yellow-bunny.png
-   theme-red-blockman.png
-   theme-blue-sponge.png
    ========================= */
 
 .themeBackdrop {
@@ -96,6 +91,7 @@ button {
 
 /* =========================
    MAIN FRAME
+   สำคัญ: overflow ต้องเป็น visible เพื่อให้เมนู popup ไม่ถูกตัด/ทับ
    ========================= */
 
 .browserFrame {
@@ -107,7 +103,7 @@ button {
   background: rgba(255, 255, 255, 0.3);
   box-shadow: 0 26px 90px rgba(15, 23, 42, 0.22);
   border: 1px solid rgba(255, 255, 255, 0.48);
-  overflow: hidden;
+  overflow: visible;
   backdrop-filter: blur(8px);
 }
 
@@ -119,6 +115,7 @@ button {
   padding: 0 16px;
   background: rgba(239, 249, 255, 0.78);
   border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 28px 28px 0 0;
 }
 
 .browserDots {
@@ -156,6 +153,7 @@ button {
 
 .appContainer {
   position: relative;
+  z-index: 2;
   min-height: calc(100vh - 76px);
   padding: 20px 34px 106px;
 }
@@ -247,6 +245,7 @@ button {
 
 .mainContent {
   position: relative;
+  z-index: 1;
 }
 
 .screenCard {
@@ -1268,13 +1267,14 @@ button {
 
 /* =========================
    BOTTOM NAV + LEARN POPUP
+   สำคัญ: z-index สูงกว่า mainContent
    ========================= */
 
 .bottomNav {
   position: fixed;
   left: 50%;
   bottom: 20px;
-  z-index: 70;
+  z-index: 9999;
   transform: translateX(-50%);
   width: min(900px, calc(100vw - 70px));
   display: grid;
@@ -1282,6 +1282,7 @@ button {
   gap: 8px;
   padding: 10px;
   border-radius: 24px;
+  overflow: visible;
 }
 
 .navItem {
@@ -1322,6 +1323,7 @@ button {
 .learnNavWrap {
   position: relative;
   min-width: 0;
+  overflow: visible;
 }
 
 .learnNavWrap .navItem {
@@ -1336,11 +1338,11 @@ button {
   width: min(86vw, 360px);
   padding: 12px;
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.97);
-  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
-  border: 1px solid rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(18px);
-  z-index: 90;
+  z-index: 10000;
 }
 
 .learnPopupMenu::after {
@@ -1351,7 +1353,7 @@ button {
   transform: translateX(-50%) rotate(45deg);
   width: 18px;
   height: 18px;
-  background: rgba(255, 255, 255, 0.97);
+  background: rgba(255, 255, 255, 0.98);
   border-right: 1px solid rgba(255, 255, 255, 0.78);
   border-bottom: 1px solid rgba(255, 255, 255, 0.78);
 }
@@ -1577,6 +1579,7 @@ button {
     border-radius: 0;
     border: 0;
     background: rgba(255, 255, 255, 0.22);
+    overflow: visible;
   }
 
   .appContainer {
@@ -1653,6 +1656,8 @@ button {
     grid-template-columns: 1fr;
     min-width: 190px;
     padding: 10px;
+    z-index: 9999;
+    overflow: visible;
   }
 
   .bottomNav.mobileOpen {
@@ -1663,7 +1668,7 @@ button {
     position: fixed;
     right: 18px;
     bottom: 18px;
-    z-index: 82;
+    z-index: 10001;
     width: 62px;
     height: 62px;
     border: 0;
@@ -1692,6 +1697,7 @@ button {
 
   .learnNavWrap {
     position: relative;
+    overflow: visible;
   }
 
   .learnPopupMenu {
@@ -1700,6 +1706,7 @@ button {
     bottom: calc(100% + 12px);
     transform: none;
     width: min(82vw, 340px);
+    z-index: 10000;
   }
 
   .learnPopupMenu::after {
