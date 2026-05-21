@@ -39,6 +39,7 @@ interface WordItem {
 interface UserProfile {
   uid: string;
   email: string;
+  loginName: string;
   name: string;
   className: string;
   coins: number;
@@ -222,6 +223,24 @@ function normalizeTheme(value: unknown): ThemeKey {
   return DEFAULT_THEME;
 }
 
+function normalizeLoginName(value: string) {
+  return value.trim().replace(/\s+/g, "").toLowerCase();
+}
+
+function createHiddenEmailFromName(name: string) {
+  const normalized = normalizeLoginName(name);
+  let hash = 0;
+
+  for (let i = 0; i < normalized.length; i += 1) {
+    hash = (hash << 5) - hash + normalized.charCodeAt(i);
+    hash |= 0;
+  }
+
+  const safeHash = Math.abs(hash).toString(36);
+
+  return `kid-${safeHash}@wordstar.local`;
+}
+
 function normalizeWord(word: string, lang: LangKey) {
   const clean = word.replace(/\s+/g, "");
   return lang === "en" ? clean.toLowerCase() : clean;
@@ -300,12 +319,13 @@ function getMapPosition(score: number) {
 
 function createDefaultProfile(currentUser: User): UserProfile {
   const email = currentUser.email || "";
-  const name = email ? email.split("@")[0] : "เด็กน้อย";
+  const fallbackName = email ? email.split("@")[0] : "เด็กน้อย";
 
   return {
     uid: currentUser.uid,
     email,
-    name,
+    loginName: fallbackName,
+    name: fallbackName,
     className: "ป.1/1",
     coins: 0,
     totalCorrect: 0,
@@ -318,11 +338,13 @@ function createDefaultProfile(currentUser: User): UserProfile {
 
 function mergeProfile(rawData: Partial<UserProfile>, currentUser: User): UserProfile {
   const fallback = createDefaultProfile(currentUser);
+  const name = rawData.name || fallback.name;
 
   return {
     uid: currentUser.uid,
     email: rawData.email || fallback.email,
-    name: rawData.name || fallback.name,
+    loginName: rawData.loginName || name,
+    name,
     className: rawData.className || fallback.className,
     coins: Number(rawData.coins || 0),
     totalCorrect: Number(rawData.totalCorrect || 0),
@@ -342,7 +364,7 @@ function App() {
 
   const [registerName, setRegisterName] = useState("");
   const [registerClassName, setRegisterClassName] = useState("ป.1/1");
-  const [email, setEmail] = useState("pond01@wordstar.local");
+  const [loginName, setLoginName] = useState("น้องเจ");
   const [password, setPassword] = useState("123456");
   const [authError, setAuthError] = useState("");
 
@@ -534,20 +556,46 @@ function App() {
     await upsertPublicProfile(nextProfile);
   }
 
+  function getCurrentAuthName() {
+    return authMode === "login" ? loginName.trim() : registerName.trim();
+  }
+
   async function handleAuthSubmit() {
     try {
       setAuthError("");
 
-      if (authMode === "login") {
-        await signInWithEmailAndPassword(auth, email.trim(), password);
+      const currentName = getCurrentAuthName();
+      const normalizedName = normalizeLoginName(currentName);
+
+      if (!normalizedName) {
+        setAuthError("กรุณาใส่ชื่อเด็ก");
         return;
       }
 
-      const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      if (password.length < 6) {
+        setAuthError("รหัสผ่านต้องมีอย่างน้อย 6 ตัว");
+        return;
+      }
+
+      const hiddenEmail = createHiddenEmailFromName(currentName);
+
+      if (authMode === "login") {
+        try {
+          await signInWithEmailAndPassword(auth, hiddenEmail, password);
+        } catch {
+          setAuthError("ชื่อเด็กหรือรหัสผ่านไม่ถูกต้อง");
+        }
+
+        return;
+      }
+
+      const credential = await createUserWithEmailAndPassword(auth, hiddenEmail, password);
+
       const newProfile: UserProfile = {
         uid: credential.user.uid,
-        email: email.trim(),
-        name: registerName.trim() || email.split("@")[0] || "เด็กน้อย",
+        email: hiddenEmail,
+        loginName: currentName.trim(),
+        name: currentName.trim(),
         className: registerClassName.trim() || "ป.1/1",
         coins: 0,
         totalCorrect: 0,
@@ -566,8 +614,14 @@ function App() {
       await upsertPublicProfile(newProfile);
       setProfile(newProfile);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "เข้าสู่ระบบไม่สำเร็จ";
-      setAuthError(message);
+      const message = error instanceof Error ? error.message : "";
+
+      if (message.includes("email-already-in-use")) {
+        setAuthError("ชื่อนี้มีคนใช้แล้ว กรุณาใช้ชื่ออื่น");
+        return;
+      }
+
+      setAuthError("สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
     }
   }
 
@@ -923,13 +977,13 @@ function App() {
             </button>
           </div>
 
-          {authMode === "register" && (
+          {authMode === "register" ? (
             <>
               <label>ชื่อเด็ก</label>
               <input
                 value={registerName}
                 onChange={(e) => setRegisterName(e.target.value)}
-                placeholder="เช่น น้องต้นกล้า"
+                placeholder="เช่น น้องเจ"
               />
 
               <label>ห้องเรียน</label>
@@ -939,16 +993,18 @@ function App() {
                 placeholder="เช่น ป.1/1"
               />
             </>
+          ) : (
+            <>
+              <label>ชื่อเด็ก</label>
+              <input
+                value={loginName}
+                onChange={(e) => setLoginName(e.target.value)}
+                placeholder="เช่น น้องเจ"
+              />
+            </>
           )}
 
-          <label>Email</label>
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="เช่น pond01@wordstar.local"
-          />
-
-          <label>Password</label>
+          <label>รหัสผ่าน</label>
           <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" />
 
           {authError && <div className="authError">{authError}</div>}
@@ -958,7 +1014,9 @@ function App() {
           </button>
 
           <div className="authHint">
-            ช่วงทดลองสามารถใช้ email สมมติได้ เช่น pond01@wordstar.local และ password อย่างน้อย 6 ตัว
+            ใช้เฉพาะชื่อเด็กและรหัสผ่านเท่านั้น ไม่ต้องกรอก Email
+            <br />
+            ถ้าชื่อซ้ำ ระบบจะแจ้งเตือนให้เปลี่ยนชื่อใหม่
           </div>
         </div>
       </div>
@@ -1392,9 +1450,6 @@ function App() {
                         }
                         placeholder="เช่น ป.1/1"
                       />
-
-                      <label>Email</label>
-                      <input value={profile.email} disabled />
 
                       <button className="saveProfileBtn" onClick={handleProfileSave} disabled={savingProfile} type="button">
                         {savingProfile ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
