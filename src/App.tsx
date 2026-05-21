@@ -442,6 +442,7 @@ function App() {
   const [authError, setAuthError] = useState("");
 
   const [activeTab, setActiveTab] = useState<TabKey>("learn");
+  const [learningMenuOpen, setLearningMenuOpen] = useState(false);
   const [language, setLanguage] = useState<LangKey>("en");
   const [wordIndex, setWordIndex] = useState(0);
   const [wordOrder, setWordOrder] = useState<number[]>(() => createWordOrder(ENGLISH_WORDS.length));
@@ -463,12 +464,11 @@ function App() {
   const [leaderboard, setLeaderboard] = useState<PublicProfile[]>([]);
   const [savingProfile, setSavingProfile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [drawVersion, setDrawVersion] = useState(0);
+  const [hasDrawn, setHasDrawn] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const canvasWrapRef = useRef<HTMLDivElement | null>(null);
   const isDrawingRef = useRef(false);
-  const hasDrawnRef = useRef(false);
   const activePointerIdRef = useRef<number | null>(null);
 
   const currentWords = language === "en" ? ENGLISH_WORDS : THAI_WORDS;
@@ -497,6 +497,7 @@ function App() {
   const mapMaxScore = SCORE_MAP_POINTS[SCORE_MAP_POINTS.length - 1].score;
   const lessonProgressText = `${Math.min(wordIndex + 1, wordOrder.length)} / ${wordOrder.length}`;
   const thaiLetterProgressText = `${Math.min(thaiLetterIndex + 1, thaiLetterOrder.length)} / ${thaiLetterOrder.length}`;
+  const isLearningActive = activeTab === "learn" || activeTab === "thaiLetters";
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -590,7 +591,7 @@ function App() {
     }
 
     return undefined;
-  }, [currentWord, lessonStarted]);
+  }, [currentWord, lessonStarted, activeTab]);
 
   useEffect(() => {
     setThaiLetterOptions(buildThaiLetterOptions(currentThaiLetter.letter));
@@ -609,7 +610,7 @@ function App() {
     }
 
     return undefined;
-  }, [currentThaiLetter, thaiLetterStarted]);
+  }, [currentThaiLetter, thaiLetterStarted, activeTab]);
 
   useEffect(() => {
     if (activeTab !== "learn" && activeTab !== "thaiLetters") return undefined;
@@ -838,16 +839,14 @@ function App() {
     const canvas = canvasRef.current;
 
     if (!canvas) {
-      hasDrawnRef.current = false;
-      setDrawVersion((prev) => prev + 1);
+      setHasDrawn(false);
       return;
     }
 
     const ctx = canvas.getContext("2d");
 
     if (!ctx) {
-      hasDrawnRef.current = false;
-      setDrawVersion((prev) => prev + 1);
+      setHasDrawn(false);
       return;
     }
 
@@ -857,9 +856,7 @@ function App() {
     ctx.restore();
 
     setupCanvas();
-
-    hasDrawnRef.current = false;
-    setDrawVersion((prev) => prev + 1);
+    setHasDrawn(false);
   }
 
   function getPointerPosition(event: React.PointerEvent<HTMLCanvasElement>) {
@@ -891,9 +888,8 @@ function App() {
     ctx.moveTo(x, y);
 
     isDrawingRef.current = true;
-    hasDrawnRef.current = true;
     activePointerIdRef.current = event.pointerId;
-    setDrawVersion((prev) => prev + 1);
+    setHasDrawn(true);
 
     try {
       canvas.setPointerCapture(event.pointerId);
@@ -926,7 +922,6 @@ function App() {
 
     isDrawingRef.current = false;
     activePointerIdRef.current = null;
-    setDrawVersion((prev) => prev + 1);
 
     try {
       canvas?.releasePointerCapture(event.pointerId);
@@ -1012,7 +1007,7 @@ function App() {
     const expected = normalizeWord(currentWord.text, currentWord.lang);
     const wordKey = getWordKey(currentWord);
 
-    if (!hasDrawnRef.current) {
+    if (!hasDrawn) {
       setCheckState("error");
       setFeedback("ต้องลองเขียนคำนี้ในช่องก่อน แล้วค่อยตรวจคำตอบ");
       return;
@@ -1049,7 +1044,7 @@ function App() {
       return;
     }
 
-    if (!hasDrawnRef.current) {
+    if (!hasDrawn) {
       setCheckState("error");
       setThaiLetterFeedback("เลือกถูกแล้ว เหลือเขียนตัวอักษรลงบนกระดานก่อน");
       return;
@@ -1164,6 +1159,7 @@ function App() {
     await signOut(auth);
     setActiveTab("learn");
     setMobileMenuOpen(false);
+    setLearningMenuOpen(false);
     setProfile(null);
   }
 
@@ -1180,10 +1176,21 @@ function App() {
   function openTab(tab: TabKey) {
     setActiveTab(tab);
     setMobileMenuOpen(false);
+    setLearningMenuOpen(false);
 
     window.setTimeout(() => {
       setupCanvas();
     }, 80);
+  }
+
+  function handleLearningMenuToggle() {
+    setMobileMenuOpen(false);
+    setLearningMenuOpen((prev) => !prev);
+  }
+
+  function handleMobileMenuToggle() {
+    setLearningMenuOpen(false);
+    setMobileMenuOpen((prev) => !prev);
   }
 
   if (authLoading || profileLoading) {
@@ -1481,7 +1488,7 @@ function App() {
 
                     <div className="miniStatus">
                       <span>เขียนแล้ว</span>
-                      <strong>{hasDrawnRef.current ? "เขียนแล้ว" : "ยังไม่ได้เขียน"}</strong>
+                      <strong>{hasDrawn ? "เขียนแล้ว" : "ยังไม่ได้เขียน"}</strong>
                     </div>
 
                     <button className="checkBtn" onClick={handleCheckAnswer} type="button">
@@ -1666,7 +1673,7 @@ function App() {
 
                     <div className="miniStatus">
                       <span>เขียนแล้ว</span>
-                      <strong>{hasDrawnRef.current ? "เขียนแล้ว" : "ยังไม่ได้เขียน"}</strong>
+                      <strong>{hasDrawn ? "เขียนแล้ว" : "ยังไม่ได้เขียน"}</strong>
                     </div>
 
                     <div className="miniStatus">
@@ -1919,7 +1926,7 @@ function App() {
 
           <button
             className={mobileMenuOpen ? "mobileMenuToggle open" : "mobileMenuToggle"}
-            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            onClick={handleMobileMenuToggle}
             type="button"
             aria-label="เปิดเมนู"
           >
@@ -1929,21 +1936,81 @@ function App() {
             <span></span>
           </button>
 
+          {learningMenuOpen && (
+            <div
+              style={{
+                position: "fixed",
+                left: "50%",
+                bottom: "92px",
+                transform: "translateX(-50%)",
+                zIndex: 80,
+                width: "min(92vw, 360px)",
+                padding: "12px",
+                borderRadius: "26px",
+                background: "rgba(255,255,255,0.96)",
+                boxShadow: "0 24px 70px rgba(15,23,42,0.24)",
+                border: "1px solid rgba(255,255,255,0.72)",
+                backdropFilter: "blur(18px)",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => openTab("learn")}
+                style={{
+                  width: "100%",
+                  border: activeTab === "learn" ? "2px solid #f59e0b" : "1px solid rgba(148,163,184,0.35)",
+                  background: activeTab === "learn" ? "linear-gradient(135deg,#fff7ed,#fef3c7)" : "#ffffff",
+                  borderRadius: "18px",
+                  padding: "14px",
+                  marginBottom: "10px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  boxShadow: "0 10px 24px rgba(15,23,42,0.08)",
+                }}
+              >
+                <span style={{ fontSize: "32px" }}>📘</span>
+                <span>
+                  <strong style={{ display: "block", fontSize: "16px" }}>ฝึกคำศัพท์</strong>
+                  <small style={{ color: "#64748b" }}>ฟังเสียง เรียงตัวอักษร และเขียนคำศัพท์</small>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => openTab("thaiLetters")}
+                style={{
+                  width: "100%",
+                  border: activeTab === "thaiLetters" ? "2px solid #f59e0b" : "1px solid rgba(148,163,184,0.35)",
+                  background: activeTab === "thaiLetters" ? "linear-gradient(135deg,#fff7ed,#fef3c7)" : "#ffffff",
+                  borderRadius: "18px",
+                  padding: "14px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  boxShadow: "0 10px 24px rgba(15,23,42,0.08)",
+                }}
+              >
+                <span style={{ fontSize: "32px" }}>✍️</span>
+                <span>
+                  <strong style={{ display: "block", fontSize: "16px" }}>ฝึกเขียน ก-ฮ</strong>
+                  <small style={{ color: "#64748b" }}>ฟังเสียง ดูภาพ คิดคำตอบ แล้วเขียนเอง</small>
+                </span>
+              </button>
+            </div>
+          )}
+
           <nav className={mobileMenuOpen ? "bottomNav glassCard mobileOpen" : "bottomNav glassCard"}>
             <button
-              className={activeTab === "learn" ? "navItem active" : "navItem"}
-              onClick={() => openTab("learn")}
+              className={isLearningActive ? "navItem active" : "navItem"}
+              onClick={handleLearningMenuToggle}
               type="button"
             >
               📘 เรียน
-            </button>
-
-            <button
-              className={activeTab === "thaiLetters" ? "navItem active" : "navItem"}
-              onClick={() => openTab("thaiLetters")}
-              type="button"
-            >
-              ✍️ ก-ฮ
             </button>
 
             <button
