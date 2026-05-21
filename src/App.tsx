@@ -192,21 +192,25 @@ const REWARD_ITEMS: RewardItem[] = [
 
 const DEFAULT_THEME: ThemeKey = "yellowBunny";
 
+/*
+  จุดคะแนนบน Score Map
+  ปรับรอบนี้ให้ฉีกซ้าย-ขวามากขึ้น ไม่เรียงเป็นเส้นกลาง
+*/
 const SCORE_MAP_POINTS: MapPoint[] = [
-  { x: 50, y: 93, label: "START", score: 0 },
-  { x: 42, y: 87, label: "10", score: 10 },
-  { x: 55, y: 82, label: "20", score: 20 },
-  { x: 40, y: 76, label: "30", score: 30 },
-  { x: 58, y: 70, label: "40", score: 40 },
-  { x: 43, y: 64, label: "50", score: 50 },
-  { x: 57, y: 58, label: "60", score: 60 },
-  { x: 67, y: 51, label: "70", score: 70 },
-  { x: 50, y: 45, label: "80", score: 80 },
+  { x: 50, y: 94, label: "START", score: 0 },
+  { x: 37, y: 88, label: "10", score: 10 },
+  { x: 57, y: 83, label: "20", score: 20 },
+  { x: 34, y: 77, label: "30", score: 30 },
+  { x: 60, y: 71, label: "40", score: 40 },
+  { x: 34, y: 65, label: "50", score: 50 },
+  { x: 54, y: 59, label: "60", score: 60 },
+  { x: 70, y: 52, label: "70", score: 70 },
+  { x: 42, y: 46, label: "80", score: 80 },
   { x: 62, y: 39, label: "90", score: 90 },
-  { x: 47, y: 33, label: "100", score: 100 },
-  { x: 60, y: 27, label: "110", score: 110 },
-  { x: 46, y: 21, label: "120", score: 120 },
-  { x: 57, y: 15, label: "130", score: 130 },
+  { x: 43, y: 33, label: "100", score: 100 },
+  { x: 66, y: 27, label: "110", score: 110 },
+  { x: 39, y: 21, label: "120", score: 120 },
+  { x: 58, y: 15, label: "130", score: 130 },
   { x: 51, y: 8, label: "140", score: 140 },
 ];
 
