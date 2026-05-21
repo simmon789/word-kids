@@ -67,6 +67,13 @@ interface RewardItem {
   description: string;
 }
 
+interface MapPoint {
+  x: number;
+  y: number;
+  label: string;
+  score: number;
+}
+
 const ENGLISH_WORDS: WordItem[] = [
   { id: "en-1", text: "hello", meaning: "สวัสดี", lang: "en" },
   { id: "en-2", text: "name", meaning: "ชื่อ", lang: "en" },
@@ -183,6 +190,25 @@ const REWARD_ITEMS: RewardItem[] = [
 ];
 
 const DEFAULT_THEME: ThemeKey = "yellowBunny";
+const SCORE_PER_POINT = 10;
+
+const SCORE_MAP_POINTS: MapPoint[] = [
+  { x: 49, y: 92, label: "START", score: 0 },
+  { x: 43, y: 84, label: "10", score: 10 },
+  { x: 55, y: 78, label: "20", score: 20 },
+  { x: 47, y: 71, label: "30", score: 30 },
+  { x: 58, y: 65, label: "40", score: 40 },
+  { x: 44, y: 59, label: "50", score: 50 },
+  { x: 51, y: 52, label: "60", score: 60 },
+  { x: 61, y: 46, label: "70", score: 70 },
+  { x: 50, y: 40, label: "80", score: 80 },
+  { x: 61, y: 34, label: "90", score: 90 },
+  { x: 48, y: 29, label: "100", score: 100 },
+  { x: 58, y: 23, label: "110", score: 110 },
+  { x: 49, y: 17, label: "120", score: 120 },
+  { x: 56, y: 11, label: "130", score: 130 },
+  { x: 51, y: 6, label: "140", score: 140 },
+];
 
 function normalizeTheme(value: unknown): ThemeKey {
   if (value === "yellowBunny" || value === "redBlockman" || value === "blueSponge") {
@@ -237,6 +263,24 @@ function buildLetterBank(word: string, lang: LangKey) {
 
 function getWordKey(item: WordItem) {
   return `${item.lang}:${item.id}:${normalizeWord(item.text, item.lang)}`;
+}
+
+function getMapPosition(score: number) {
+  const safeScore = Math.max(0, score);
+  const maxIndex = SCORE_MAP_POINTS.length - 1;
+  const step = Math.floor(safeScore / SCORE_PER_POINT);
+  const progress = (safeScore % SCORE_PER_POINT) / SCORE_PER_POINT;
+
+  const currentIndex = Math.min(step, maxIndex);
+  const nextIndex = Math.min(currentIndex + 1, maxIndex);
+
+  const current = SCORE_MAP_POINTS[currentIndex];
+  const next = SCORE_MAP_POINTS[nextIndex];
+
+  return {
+    x: current.x + (next.x - current.x) * progress,
+    y: current.y + (next.y - current.y) * progress,
+  };
 }
 
 function createDefaultProfile(currentUser: User): UserProfile {
@@ -322,6 +366,9 @@ function App() {
 
   const isArrangeComplete = selectedIndices.length === expectedChars.length;
   const isArrangeCorrect = normalizedSelectedText === normalizeWord(currentWord.text, currentWord.lang);
+
+  const myMapPosition = profile ? getMapPosition(profile.coins) : getMapPosition(0);
+  const mapMaxScore = SCORE_MAP_POINTS[SCORE_MAP_POINTS.length - 1].score;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -1139,8 +1186,8 @@ function App() {
             )}
 
             {activeTab === "score" && (
-              <section className="screenCard">
-                <div className="sectionTitle">คะแนนของฉัน</div>
+              <section className="screenCard scoreScreen">
+                <div className="sectionTitle">แผนที่คะแนนผจญภัย</div>
 
                 <div className="scoreTopRow">
                   <div className="scoreBox glassCard">
@@ -1156,31 +1203,92 @@ function App() {
                   </div>
                 </div>
 
-                <div className="leaderboardCard glassCard">
-                  <div className="cardTitle">ตารางอันดับเพื่อน</div>
+                <div className="scoreMapLayout">
+                  <div className="scoreMapCard glassCard">
+                    <div className="mapHeader">
+                      <div>
+                        <h3>เส้นทางสะสมคะแนน</h3>
+                        <p>1 จุด = 10 คะแนน • Avatar จะขยับตามคะแนนของแต่ละคน</p>
+                      </div>
 
-                  <div className="leaderboardList">
-                    {leaderboard.map((item, index) => {
-                      const isMe = user.uid === item.uid;
+                      <div className="mapScorePill">
+                        {profile.coins} / {mapMaxScore} คะแนน
+                      </div>
+                    </div>
 
-                      return (
-                        <div key={item.uid} className={isMe ? "leaderItem me" : "leaderItem"}>
-                          <div className="leaderLeft">
-                            <div className="leaderRank">{index + 1}</div>
-                            <div className="leaderAvatar">{item.avatarEmoji || "🧒"}</div>
+                    <div className="scoreMapBoard">
+                      <img src="/maps/score-map.png" alt="Score map" className="scoreMapImage" />
 
-                            <div>
-                              <div className="leaderName">
-                                {item.name} {isMe ? "(ฉัน)" : ""}
-                              </div>
-                              <div className="leaderClass">{item.className || "ยังไม่ได้ระบุห้อง"}</div>
-                            </div>
-                          </div>
-
-                          <div className="leaderCoins">{item.coins} คะแนน</div>
+                      {SCORE_MAP_POINTS.map((point) => (
+                        <div
+                          key={point.score}
+                          className="mapCheckpoint"
+                          style={{
+                            left: `${point.x}%`,
+                            top: `${point.y}%`,
+                          }}
+                        >
+                          <span>{point.label}</span>
                         </div>
-                      );
-                    })}
+                      ))}
+
+                      {leaderboard.map((player, index) => {
+                        const pos = getMapPosition(player.coins);
+                        const isMe = player.uid === user.uid;
+                        const offset = (index % 5) - 2;
+
+                        return (
+                          <div
+                            key={player.uid}
+                            className={isMe ? "mapPlayer me" : "mapPlayer"}
+                            style={{
+                              left: `calc(${pos.x}% + ${offset * 8}px)`,
+                              top: `calc(${pos.y}% + ${(index % 3) * 6}px)`,
+                            }}
+                            title={`${player.name} ${player.coins} คะแนน`}
+                          >
+                            <div className="mapPlayerAvatar">{player.avatarEmoji || "🧒"}</div>
+                            <div className="mapPlayerName">{isMe ? "ฉัน" : player.name}</div>
+                          </div>
+                        );
+                      })}
+
+                      <div
+                        className="myMapGlow"
+                        style={{
+                          left: `${myMapPosition.x}%`,
+                          top: `${myMapPosition.y}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="leaderboardCard glassCard">
+                    <div className="cardTitle">ตารางอันดับเพื่อน</div>
+
+                    <div className="leaderboardList">
+                      {leaderboard.map((item, index) => {
+                        const isMe = user.uid === item.uid;
+
+                        return (
+                          <div key={item.uid} className={isMe ? "leaderItem me" : "leaderItem"}>
+                            <div className="leaderLeft">
+                              <div className="leaderRank">{index + 1}</div>
+                              <div className="leaderAvatar">{item.avatarEmoji || "🧒"}</div>
+
+                              <div>
+                                <div className="leaderName">
+                                  {item.name} {isMe ? "(ฉัน)" : ""}
+                                </div>
+                                <div className="leaderClass">{item.className || "ยังไม่ได้ระบุห้อง"}</div>
+                              </div>
+                            </div>
+
+                            <div className="leaderCoins">{item.coins} คะแนน</div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </section>
