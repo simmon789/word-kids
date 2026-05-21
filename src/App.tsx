@@ -128,46 +128,46 @@ const THAI_WORDS: WordItem[] = [
 const THAI_LETTERS: ThaiLetterItem[] = [
   { id: "letter-ก", letter: "ก", sound: "กอ ไก่", word: "ไก่", emoji: "🐔", hint: "ไก่ ขึ้นต้นด้วย ก" },
   { id: "letter-ข", letter: "ข", sound: "ขอ ไข่", word: "ไข่", emoji: "🥚", hint: "ไข่ ขึ้นต้นด้วย ข" },
-  { id: "letter-ฃ", letter: "ฃ", sound: "ฃอ ขวด", word: "ขวด", emoji: "🍼", hint: "ขวด ใช้จำตัว ฃ" },
+  { id: "letter-ฃ", letter: "ฃ", sound: "ฃอ ขวด", word: "ขวด", emoji: "", hint: "ขวด ใช้จำตัว ฃ" },
   { id: "letter-ค", letter: "ค", sound: "คอ ควาย", word: "ควาย", emoji: "🐃", hint: "ควาย ขึ้นต้นด้วย ค" },
-  { id: "letter-ฅ", letter: "ฅ", sound: "ฅอ คน", word: "คน", emoji: "🧍", hint: "คน ใช้จำตัว ฅ" },
+  { id: "letter-ฅ", letter: "ฅ", sound: "ฅอ คน", word: "คน", emoji: "", hint: "คน ใช้จำตัว ฅ" },
   { id: "letter-ฆ", letter: "ฆ", sound: "ฆอ ระฆัง", word: "ระฆัง", emoji: "🔔", hint: "ระฆัง ใช้จำตัว ฆ" },
   { id: "letter-ง", letter: "ง", sound: "งอ งู", word: "งู", emoji: "🐍", hint: "งู ขึ้นต้นด้วย ง" },
   { id: "letter-จ", letter: "จ", sound: "จอ จาน", word: "จาน", emoji: "🍽️", hint: "จาน ขึ้นต้นด้วย จ" },
-  { id: "letter-ฉ", letter: "ฉ", sound: "ฉอ ฉิ่ง", word: "ฉิ่ง", emoji: "🎶", hint: "ฉิ่ง ขึ้นต้นด้วย ฉ" },
+  { id: "letter-ฉ", letter: "ฉ", sound: "ฉอ ฉิ่ง", word: "ฉิ่ง", emoji: "", hint: "ฉิ่ง ขึ้นต้นด้วย ฉ" },
   { id: "letter-ช", letter: "ช", sound: "ชอ ช้าง", word: "ช้าง", emoji: "🐘", hint: "ช้าง ขึ้นต้นด้วย ช" },
   { id: "letter-ซ", letter: "ซ", sound: "ซอ โซ่", word: "โซ่", emoji: "⛓️", hint: "โซ่ ใช้จำตัว ซ" },
-  { id: "letter-ฌ", letter: "ฌ", sound: "ฌอ เฌอ", word: "เฌอ", emoji: "🌳", hint: "เฌอ หมายถึงต้นไม้ ใช้จำตัว ฌ" },
-  { id: "letter-ญ", letter: "ญ", sound: "ญอ หญิง", word: "หญิง", emoji: "👧", hint: "หญิง ใช้จำตัว ญ" },
-  { id: "letter-ฎ", letter: "ฎ", sound: "ฎอ ชฎา", word: "ชฎา", emoji: "👑", hint: "ชฎา ใช้จำตัว ฎ" },
-  { id: "letter-ฏ", letter: "ฏ", sound: "ฏอ ปฏัก", word: "ปฏัก", emoji: "🪄", hint: "ปฏัก ใช้จำตัว ฏ" },
-  { id: "letter-ฐ", letter: "ฐ", sound: "ฐอ ฐาน", word: "ฐาน", emoji: "🏛️", hint: "ฐาน ใช้จำตัว ฐ" },
-  { id: "letter-ฑ", letter: "ฑ", sound: "ฑอ มณโฑ", word: "มณโฑ", emoji: "👸", hint: "มณโฑ ใช้จำตัว ฑ" },
-  { id: "letter-ฒ", letter: "ฒ", sound: "ฒอ ผู้เฒ่า", word: "ผู้เฒ่า", emoji: "👴", hint: "ผู้เฒ่า ใช้จำตัว ฒ" },
-  { id: "letter-ณ", letter: "ณ", sound: "ณอ เณร", word: "เณร", emoji: "🧑‍🦲", hint: "เณร ใช้จำตัว ณ" },
+  { id: "letter-ฌ", letter: "ฌ", sound: "ฌอ เฌอ", word: "เฌอ", emoji: "", hint: "เฌอ หมายถึงต้นไม้ ใช้จำตัว ฌ" },
+  { id: "letter-ญ", letter: "ญ", sound: "ญอ หญิง", word: "หญิง", emoji: "", hint: "หญิง ใช้จำตัว ญ" },
+  { id: "letter-ฎ", letter: "ฎ", sound: "ฎอ ชฎา", word: "ชฎา", emoji: "", hint: "ชฎา ใช้จำตัว ฎ" },
+  { id: "letter-ฏ", letter: "ฏ", sound: "ฏอ ปฏัก", word: "ปฏัก", emoji: "", hint: "ปฏัก ใช้จำตัว ฏ" },
+  { id: "letter-ฐ", letter: "ฐ", sound: "ฐอ ฐาน", word: "ฐาน", emoji: "", hint: "ฐาน ใช้จำตัว ฐ" },
+  { id: "letter-ฑ", letter: "ฑ", sound: "ฑอ มณโฑ", word: "มณโฑ", emoji: "", hint: "มณโฑ ใช้จำตัว ฑ" },
+  { id: "letter-ฒ", letter: "ฒ", sound: "ฒอ ผู้เฒ่า", word: "ผู้เฒ่า", emoji: "", hint: "ผู้เฒ่า ใช้จำตัว ฒ" },
+  { id: "letter-ณ", letter: "ณ", sound: "ณอ เณร", word: "เณร", emoji: "", hint: "เณร ใช้จำตัว ณ" },
   { id: "letter-ด", letter: "ด", sound: "ดอ เด็ก", word: "เด็ก", emoji: "🧒", hint: "เด็ก ขึ้นต้นด้วย ด" },
   { id: "letter-ต", letter: "ต", sound: "ตอ เต่า", word: "เต่า", emoji: "🐢", hint: "เต่า ขึ้นต้นด้วย ต" },
   { id: "letter-ถ", letter: "ถ", sound: "ถอ ถุง", word: "ถุง", emoji: "🛍️", hint: "ถุง ขึ้นต้นด้วย ถ" },
-  { id: "letter-ท", letter: "ท", sound: "ทอ ทหาร", word: "ทหาร", emoji: "🪖", hint: "ทหาร ขึ้นต้นด้วย ท" },
+  { id: "letter-ท", letter: "ท", sound: "ทอ ทหาร", word: "ทหาร", emoji: "", hint: "ทหาร ขึ้นต้นด้วย ท" },
   { id: "letter-ธ", letter: "ธ", sound: "ธอ ธง", word: "ธง", emoji: "🚩", hint: "ธง ขึ้นต้นด้วย ธ" },
   { id: "letter-น", letter: "น", sound: "นอ หนู", word: "หนู", emoji: "🐭", hint: "หนู ใช้จำตัว น" },
   { id: "letter-บ", letter: "บ", sound: "บอ ใบไม้", word: "ใบไม้", emoji: "🍃", hint: "ใบไม้ ขึ้นต้นด้วย บ" },
   { id: "letter-ป", letter: "ป", sound: "ปอ ปลา", word: "ปลา", emoji: "🐟", hint: "ปลา ขึ้นต้นด้วย ป" },
   { id: "letter-ผ", letter: "ผ", sound: "ผอ ผึ้ง", word: "ผึ้ง", emoji: "🐝", hint: "ผึ้ง ขึ้นต้นด้วย ผ" },
-  { id: "letter-ฝ", letter: "ฝ", sound: "ฝอ ฝา", word: "ฝา", emoji: "🧢", hint: "ฝา ขึ้นต้นด้วย ฝ" },
-  { id: "letter-พ", letter: "พ", sound: "พอ พาน", word: "พาน", emoji: "🏵️", hint: "พาน ขึ้นต้นด้วย พ" },
+  { id: "letter-ฝ", letter: "ฝ", sound: "ฝอ ฝา", word: "ฝา", emoji: "", hint: "ฝา ขึ้นต้นด้วย ฝ" },
+  { id: "letter-พ", letter: "พ", sound: "พอ พาน", word: "พาน", emoji: "", hint: "พาน ขึ้นต้นด้วย พ" },
   { id: "letter-ฟ", letter: "ฟ", sound: "ฟอ ฟัน", word: "ฟัน", emoji: "🦷", hint: "ฟัน ขึ้นต้นด้วย ฟ" },
-  { id: "letter-ภ", letter: "ภ", sound: "ภอ สำเภา", word: "สำเภา", emoji: "⛵", hint: "สำเภา ใช้จำตัว ภ" },
+  { id: "letter-ภ", letter: "ภ", sound: "ภอ สำเภา", word: "สำเภา", emoji: "", hint: "สำเภา ใช้จำตัว ภ" },
   { id: "letter-ม", letter: "ม", sound: "มอ ม้า", word: "ม้า", emoji: "🐴", hint: "ม้า ขึ้นต้นด้วย ม" },
-  { id: "letter-ย", letter: "ย", sound: "ยอ ยักษ์", word: "ยักษ์", emoji: "👹", hint: "ยักษ์ ขึ้นต้นด้วย ย" },
+  { id: "letter-ย", letter: "ย", sound: "ยอ ยักษ์", word: "ยักษ์", emoji: "", hint: "ยักษ์ ขึ้นต้นด้วย ย" },
   { id: "letter-ร", letter: "ร", sound: "รอ เรือ", word: "เรือ", emoji: "🚤", hint: "เรือ ขึ้นต้นด้วย ร" },
   { id: "letter-ล", letter: "ล", sound: "ลอ ลิง", word: "ลิง", emoji: "🐒", hint: "ลิง ขึ้นต้นด้วย ล" },
   { id: "letter-ว", letter: "ว", sound: "วอ แหวน", word: "แหวน", emoji: "💍", hint: "แหวน ใช้จำตัว ว" },
-  { id: "letter-ศ", letter: "ศ", sound: "ศอ ศาลา", word: "ศาลา", emoji: "🏠", hint: "ศาลา ใช้จำตัว ศ" },
-  { id: "letter-ษ", letter: "ษ", sound: "ษอ ฤาษี", word: "ฤาษี", emoji: "🧙", hint: "ฤาษี ใช้จำตัว ษ" },
+  { id: "letter-ศ", letter: "ศ", sound: "ศอ ศาลา", word: "ศาลา", emoji: "", hint: "ศาลา ใช้จำตัว ศ" },
+  { id: "letter-ษ", letter: "ษ", sound: "ษอ ฤาษี", word: "ฤาษี", emoji: "", hint: "ฤาษี ใช้จำตัว ษ" },
   { id: "letter-ส", letter: "ส", sound: "สอ เสือ", word: "เสือ", emoji: "🐯", hint: "เสือ ขึ้นต้นด้วย ส" },
-  { id: "letter-ห", letter: "ห", sound: "หอ หีบ", word: "หีบ", emoji: "📦", hint: "หีบ ขึ้นต้นด้วย ห" },
-  { id: "letter-ฬ", letter: "ฬ", sound: "ฬอ จุฬา", word: "จุฬา", emoji: "🪁", hint: "จุฬา ใช้จำตัว ฬ" },
+  { id: "letter-ห", letter: "ห", sound: "หอ หีบ", word: "หีบ", emoji: "", hint: "หีบ ขึ้นต้นด้วย ห" },
+  { id: "letter-ฬ", letter: "ฬ", sound: "ฬอ จุฬา", word: "จุฬา", emoji: "", hint: "จุฬา ใช้จำตัว ฬ" },
   { id: "letter-อ", letter: "อ", sound: "ออ อ่าง", word: "อ่าง", emoji: "🛁", hint: "อ่าง ขึ้นต้นด้วย อ" },
   { id: "letter-ฮ", letter: "ฮ", sound: "ฮอ นกฮูก", word: "นกฮูก", emoji: "🦉", hint: "นกฮูก ใช้จำตัว ฮ" },
 ];
@@ -511,7 +511,7 @@ function App() {
   const [selectedThaiLetter, setSelectedThaiLetter] = useState("");
   const [showThaiLetterAnswer, setShowThaiLetterAnswer] = useState(false);
   const [thaiLetterStarted, setThaiLetterStarted] = useState(false);
-  const [thaiLetterFeedback, setThaiLetterFeedback] = useState("ฟังเสียง ดูภาพ แล้วลองคิดว่าต้องเขียนตัวอะไร");
+  const [thaiLetterFeedback, setThaiLetterFeedback] = useState("ฟังเสียง ดูคำช่วยจำ แล้วลองคิดว่าต้องเขียนตัวอะไร");
 
   const [leaderboard, setLeaderboard] = useState<PublicProfile[]>([]);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -649,7 +649,7 @@ function App() {
     setThaiLetterOptions(buildThaiLetterOptions(currentThaiLetter.letter));
     setSelectedThaiLetter("");
     setShowThaiLetterAnswer(false);
-    setThaiLetterFeedback("ฟังเสียง ดูภาพ แล้วลองคิดว่าต้องเขียนตัวอะไร");
+    setThaiLetterFeedback("ฟังเสียง ดูคำช่วยจำ แล้วลองคิดว่าต้องเขียนตัวอะไร");
     setCheckState("idle");
     clearCanvas();
 
@@ -850,7 +850,7 @@ function App() {
 
   function startThaiLetterLesson() {
     setThaiLetterStarted(true);
-    setThaiLetterFeedback("เริ่มฝึก ก-ฮ แล้ว ฟังเสียง ดูภาพ แล้วเขียนตัวอักษรเอง");
+    setThaiLetterFeedback("เริ่มฝึก ก-ฮ แล้ว ฟังเสียง ดูคำช่วยจำ แล้วเขียนตัวอักษรเอง");
     speakWord(getThaiLetterSpeakText(currentThaiLetter), "th");
   }
 
@@ -1580,12 +1580,12 @@ function App() {
                     <button className="startLessonBtn" onClick={startThaiLetterLesson} type="button">
                       ▶ เริ่มฝึก ก-ฮ
                     </button>
-                    <p>เด็กจะได้ฟังเสียง ดูภาพ คิดคำตอบ แล้วเขียนตัวอักษรเอง</p>
+                    <p>เด็กจะได้ฟังเสียง ดูคำช่วยจำ คิดคำตอบ แล้วเขียนตัวอักษรเอง</p>
                   </div>
                 )}
 
                 <div className="soundHero glassCard">
-                  <div className="soundIcon">{currentThaiLetter.emoji}</div>
+                  <div className="soundIcon">{currentThaiLetter.emoji || "🔊"}</div>
 
                   <div className="soundText">
                     <h3>โจทย์ ก-ฮ</h3>
@@ -1603,7 +1603,10 @@ function App() {
                         </>
                       ) : (
                         <>
-                          ภาพช่วยจำ: {currentThaiLetter.emoji} {currentThaiLetter.word} • ตัวที่ {thaiLetterProgressText}
+                          {currentThaiLetter.emoji
+                            ? `ภาพช่วยจำ: ${currentThaiLetter.emoji} ${currentThaiLetter.word}`
+                            : `คำช่วยจำ: ${currentThaiLetter.word}`}{" "}
+                          • ตัวที่ {thaiLetterProgressText}
                         </>
                       )}
                     </div>
@@ -2005,7 +2008,7 @@ function App() {
                     <span className="learnPopupIcon">✍️</span>
                     <span>
                       <strong>ฝึกเขียน ก-ฮ</strong>
-                      <small>ฟังเสียง ดูภาพ คิดคำตอบ แล้วเขียนเอง</small>
+                      <small>ฟังเสียง ดูคำช่วยจำ คิดคำตอบ แล้วเขียนเอง</small>
                     </span>
                   </button>
                 </div>
