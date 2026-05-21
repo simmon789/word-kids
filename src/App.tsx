@@ -192,22 +192,28 @@ const REWARD_ITEMS: RewardItem[] = [
 const DEFAULT_THEME: ThemeKey = "yellowBunny";
 const SCORE_PER_POINT = 10;
 
+/*
+  ตำแหน่งแผนที่แบบคดเคี้ยวซ้าย-ขวา
+  x/y คือเปอร์เซ็นต์ของรูป score-map.png
+  0 = START ด้านล่าง
+  140 = ใกล้ธงด้านบน
+*/
 const SCORE_MAP_POINTS: MapPoint[] = [
-  { x: 49, y: 92, label: "START", score: 0 },
-  { x: 43, y: 84, label: "10", score: 10 },
-  { x: 55, y: 78, label: "20", score: 20 },
-  { x: 47, y: 71, label: "30", score: 30 },
-  { x: 58, y: 65, label: "40", score: 40 },
-  { x: 44, y: 59, label: "50", score: 50 },
-  { x: 51, y: 52, label: "60", score: 60 },
-  { x: 61, y: 46, label: "70", score: 70 },
-  { x: 50, y: 40, label: "80", score: 80 },
-  { x: 61, y: 34, label: "90", score: 90 },
-  { x: 48, y: 29, label: "100", score: 100 },
-  { x: 58, y: 23, label: "110", score: 110 },
-  { x: 49, y: 17, label: "120", score: 120 },
-  { x: 56, y: 11, label: "130", score: 130 },
-  { x: 51, y: 6, label: "140", score: 140 },
+  { x: 50, y: 93, label: "START", score: 0 },
+  { x: 42, y: 87, label: "10", score: 10 },
+  { x: 55, y: 82, label: "20", score: 20 },
+  { x: 40, y: 76, label: "30", score: 30 },
+  { x: 58, y: 70, label: "40", score: 40 },
+  { x: 43, y: 64, label: "50", score: 50 },
+  { x: 57, y: 58, label: "60", score: 60 },
+  { x: 67, y: 51, label: "70", score: 70 },
+  { x: 50, y: 45, label: "80", score: 80 },
+  { x: 62, y: 39, label: "90", score: 90 },
+  { x: 47, y: 33, label: "100", score: 100 },
+  { x: 60, y: 27, label: "110", score: 110 },
+  { x: 46, y: 21, label: "120", score: 120 },
+  { x: 57, y: 15, label: "130", score: 130 },
+  { x: 51, y: 8, label: "140", score: 140 },
 ];
 
 function normalizeTheme(value: unknown): ThemeKey {
@@ -266,20 +272,36 @@ function getWordKey(item: WordItem) {
 }
 
 function getMapPosition(score: number) {
-  const safeScore = Math.max(0, score);
-  const maxIndex = SCORE_MAP_POINTS.length - 1;
-  const step = Math.floor(safeScore / SCORE_PER_POINT);
-  const progress = (safeScore % SCORE_PER_POINT) / SCORE_PER_POINT;
+  const maxScore = SCORE_MAP_POINTS[SCORE_MAP_POINTS.length - 1].score;
+  const safeScore = Math.max(0, Math.min(score, maxScore));
 
-  const currentIndex = Math.min(step, maxIndex);
-  const nextIndex = Math.min(currentIndex + 1, maxIndex);
+  if (safeScore <= 0) {
+    return {
+      x: SCORE_MAP_POINTS[0].x,
+      y: SCORE_MAP_POINTS[0].y,
+    };
+  }
 
-  const current = SCORE_MAP_POINTS[currentIndex];
-  const next = SCORE_MAP_POINTS[nextIndex];
+  for (let i = 0; i < SCORE_MAP_POINTS.length - 1; i += 1) {
+    const current = SCORE_MAP_POINTS[i];
+    const next = SCORE_MAP_POINTS[i + 1];
+
+    if (safeScore >= current.score && safeScore <= next.score) {
+      const range = next.score - current.score;
+      const progress = range === 0 ? 0 : (safeScore - current.score) / range;
+
+      return {
+        x: current.x + (next.x - current.x) * progress,
+        y: current.y + (next.y - current.y) * progress,
+      };
+    }
+  }
+
+  const last = SCORE_MAP_POINTS[SCORE_MAP_POINTS.length - 1];
 
   return {
-    x: current.x + (next.x - current.x) * progress,
-    y: current.y + (next.y - current.y) * progress,
+    x: last.x,
+    y: last.y,
   };
 }
 
