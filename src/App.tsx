@@ -161,6 +161,13 @@ const REWARD_ITEMS: RewardItem[] = [
     description: "แลกน้ำส้มโซดา 1 แก้ว",
   },
   {
+    id: "reward-100-game",
+    title: "โหลดเกมส์ 1 เกมส์",
+    cost: 100,
+    emoji: "🎮",
+    description: "สะสมครบ 100 คะแนน แลกโหลดเกมส์ 1 เกมส์",
+  },
+  {
     id: "reward-200-suki",
     title: "สุกี้",
     cost: 200,
